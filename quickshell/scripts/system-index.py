@@ -111,7 +111,10 @@ def services():
 
     items = [
         ("quickshell", "quickshell", "панели, поиск, эмодзи, окно блокировки",
-         "pgrep -x qs", "pkill -x qs; sleep 1; setsid -f qs"),
+         # pgrep-страховка: пока quickshell поднимался сам (watchdog), второй
+         # экземпляр не нужен — иначе панели нарисуются дважды
+         "pgrep -x qs", "pkill -x qs; sleep 1; pkill -x qs; sleep 1; "
+                       "pgrep -x qs >/dev/null || setsid -f qs"),
         ("waybar", "waybar", "полоса сверху",
          "pgrep -x waybar",
          # bar поднимает sway из строки exec_always (там же и переменная окружения
