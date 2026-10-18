@@ -1,0 +1,67 @@
+/* wofi — цвета подставляет theme-render.py. Вручную не править.
+   Вид повторяет панели quickshell: матово, без «пилюль», акцент на выбранной строке. */
+
+* {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+}
+
+window {
+    margin: 0;
+    padding: 8px;
+    border: 1px solid {{outline}};
+    border-radius: 10px;
+    background-color: alpha({{bg}}, 0.92);
+    color: {{fg}};
+}
+
+#outer-box {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+#input {
+    margin: 0 0 8px 0;
+    padding: 8px 10px;
+    border: 1px solid {{outline}};
+    border-radius: 0;
+    background-color: {{surface}};
+    color: {{accent}};
+}
+
+#scroll {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+#inner-box {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+#entry {
+    padding: 6px 10px;
+    border-radius: 0;
+    background: transparent;
+}
+
+#entry #text {
+    color: {{fg}};
+}
+
+/* полоска акцента у выбранной строки, как в лаунчере quickshell */
+#entry:selected {
+    background-color: {{accent}};
+}
+
+#entry:selected #text {
+    color: {{on_accent}};
+}
+
+#img {
+    margin-right: 8px;
+}

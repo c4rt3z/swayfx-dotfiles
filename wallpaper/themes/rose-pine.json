@@ -1,0 +1,31 @@
+{
+  "name": "Rosé Pine",
+  "variant": "dark",
+  "bg": "#191724",
+  "bg_soft": "#1f1d2e",
+  "fg": "#e0def4",
+  "fg_dim": "#908caa",
+  "accent": "#c4a7e7",
+  "accent2": "#9ccfd8",
+  "accent3": "#f6c177",
+  "ansi": {
+    "black": "#26233a",
+    "red": "#eb6f92",
+    "green": "#31748f",
+    "yellow": "#f6c177",
+    "blue": "#9ccfd8",
+    "magenta": "#c4a7e7",
+    "cyan": "#ebbcba",
+    "white": "#e0def4"
+  },
+  "ansi_bright": {
+    "black": "#6e6a86",
+    "red": "#eb6f92",
+    "green": "#31748f",
+    "yellow": "#f6c177",
+    "blue": "#9ccfd8",
+    "magenta": "#c4a7e7",
+    "cyan": "#ebbcba",
+    "white": "#e0def4"
+  }
+}

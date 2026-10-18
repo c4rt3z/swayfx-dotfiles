@@ -1,0 +1,31 @@
+{
+  "name": "Everforest",
+  "variant": "dark",
+  "bg": "#2d353b",
+  "bg_soft": "#232a2e",
+  "fg": "#d3c6aa",
+  "fg_dim": "#859289",
+  "accent": "#a7c080",
+  "accent2": "#7fbbb3",
+  "accent3": "#dbbc7f",
+  "ansi": {
+    "black": "#475258",
+    "red": "#e67e80",
+    "green": "#a7c080",
+    "yellow": "#dbbc7f",
+    "blue": "#7fbbb3",
+    "magenta": "#d699b6",
+    "cyan": "#83c092",
+    "white": "#d3c6aa"
+  },
+  "ansi_bright": {
+    "black": "#475258",
+    "red": "#e67e80",
+    "green": "#a7c080",
+    "yellow": "#dbbc7f",
+    "blue": "#7fbbb3",
+    "magenta": "#d699b6",
+    "cyan": "#83c092",
+    "white": "#d3c6aa"
+  }
+}

@@ -1,0 +1,44 @@
+# Репозиторий — только рабочий стол: панели quickshell, sway, waybar,
+# обои-тема, конфиги терминалов и GTK. Всё остальное в ~/.config (почта,
+# мессенджеры, ключи, настройки KDE) остаётся личным и в git не попадает:
+# ниже белый список, а не чёрный.
+#
+#   git status --short | wc -l   # сколько файлов уйдёт в репозиторий
+#
+/*
+!.gitignore
+!README.md
+!README.ru.md
+
+!environment.d/
+!quickshell/
+!sway/
+!swaylock/
+!waybar/
+!wofi/
+!xsettingsd/
+!wallpaper/
+!matugen/
+!alacritty/
+!kitty/
+!gtk-3.0/
+!gtk-4.0/
+
+# ── чего не нужно даже внутри этих папок ────────────────────────────────────
+
+__pycache__/
+*.pyc
+*.bak
+
+# состояние машины: язык интерфейса и снимок «как было» для биндов
+# создаются на месте, у каждого человека свои
+quickshell/language
+quickshell/keys-default.json
+
+# сторонние темы alacritty — отдельный репозиторий, ставится клоном
+# (см. README: ~/.config/alacritty/themes)
+alacritty/themes/
+
+# старые копии конфига sway, оставшиеся от отладки
+sway/config1
+sway/config.txt

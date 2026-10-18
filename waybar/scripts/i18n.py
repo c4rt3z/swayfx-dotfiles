@@ -1,0 +1,1 @@
+../../quickshell/scripts/i18n.py

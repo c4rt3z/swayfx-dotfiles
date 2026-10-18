@@ -1,0 +1,129 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "spacing": 0,
+  "modules-left": [
+    "custom/logo",
+    "custom/title",
+    "custom/clock",
+    "sway/workspaces"
+  ],
+  "modules-center": [
+    "custom/center"
+  ],
+  "modules-right": [
+    "network",
+    "memory",
+    "battery",
+  "backlight",
+  "pulseaudio",
+    "sway/language",
+    "tray",
+    "custom/power"
+  ],
+  "custom/title": {
+    "exec": "~/.config/waybar/scripts/window-title.py",
+    "max-length": 70,
+    "hide-empty-text": true,
+    "tooltip": false
+  },
+  "custom/clock": {
+    "exec": "~/.config/waybar/scripts/clock.sh",
+    "interval": 10,
+    "tooltip": false
+  },
+  "sway/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "format": "{name}"
+  },
+  "custom/center": {
+    "exec": "~/.config/waybar/scripts/center.py",
+    "max-length": 64,
+    "tooltip": false,
+    "on-click": "~/.config/waybar/scripts/music-open.sh",
+    "on-click-right": "~/.config/waybar/scripts/mediactl.sh next",
+    "on-scroll-up": "~/.config/waybar/scripts/mediactl.sh previous",
+    "on-scroll-down": "~/.config/waybar/scripts/mediactl.sh next"
+  },
+  "network": {
+    "format-wifi": "  {essid} {signalStrength}%",
+    "format-ethernet": "󰈀  {ipaddr}",
+    "format-disconnected": "󰖪  нет сети",
+    "tooltip-format": "{ifname} via {gwaddr}",
+    "on-click": "qs ipc call panel toggle network"
+  },
+  "memory": {
+    "format": "󰍛 {used:0.2f}GB",
+    "interval": 3,
+    "on-click": "qs ipc call panel toggle memory"
+  },
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󱐋 {capacity}%",
+    "format-icons": [
+      "󰂎",
+      "󰁺",
+      "󰁼",
+      "󰁾",
+      "󰂀",
+      "󰂂",
+      "󰁹"
+    ],
+    "on-click": "qs ipc call panel toggle battery"
+  },
+  "backlight": {
+    "device": "amdgpu_bl1",
+    "format": "{icon} {percent}%",
+    "format-icons": [
+      "󰃞",
+      "󰃟",
+      "󰃠"
+    ],
+    "on-scroll-up": "brightnessctl set +1% && pkill -SIGRTMIN+2 waybar",
+    "on-scroll-down": "brightnessctl set 1%- && pkill -SIGRTMIN+2 waybar",
+    "on-click": "qs ipc call panel toggle brightness"
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "  Без звука",
+    "format-icons": {
+      "headphone": " ",
+      "default": [
+        "",
+        " ",
+        "󰕾 "
+      ]
+    },
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +1%",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -1%",
+    "on-click": "qs ipc call panel toggle volume",
+    "on-click-right": "pavucontrol"
+  },
+  "sway/language": {
+    "format": "{short}",
+    "tooltip-format": "{long}",
+    "on-click": "swaymsg input type:keyboard xkb_switch_layout next"
+  },
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10
+  },
+  "custom/logo": {
+    "exec": "~/.config/waybar/scripts/logo-icon.sh",
+    "interval": 3600,
+    "tooltip": false,
+    "on-click": "qs ipc call panel open launcher"
+  },
+  "custom/power": {
+    "exec": "~/.config/waybar/scripts/power-icon.sh",
+    "interval": 60,
+    "tooltip": false,
+    "on-click": "qs ipc call panel open power"
+  }
+}

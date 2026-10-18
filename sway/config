@@ -1,0 +1,299 @@
+# Default config for sway
+#
+# Copy this to ~/.config/sway/config and edit it to your liking.
+#
+# Read `man 5 sway` for a complete reference.
+
+### Variables
+#
+# Logo key. Use Mod1 for Alt.
+set $mod Mod4
+# Home row direction keys, like vim
+set $left h
+set $down j
+set $up k
+set $right l
+# Your preferred terminal emulator
+set $term alacritty
+set $filemanager dolphin
+set $browser firefox
+# Your preferred application launcher
+set $menu qs ipc call panel open launcher
+
+### Output configuration
+#
+# Обои рисует quickshell на слое Background (движок обоев + панель выбора,
+# см. ~/.config/quickshell/wallpaper/). swaybg больше не нужен — если он остался
+# от прошлых запусков, гасим: иначе он перекроет слой обоев.
+exec_always sh -c "pkill -x swaybg; sleep 3; pkill -x swaybg"
+exec_always sh -c "pkill waybar; env QT_QPA_PLATFORMTHEME=gtk3 waybar"
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+# pipewire / wireplumber / pipewire-pulse запускаются systemd (socket activation).
+# Вручную не стартуем: иначе конфликт за сокет /run/user/1001/pipewire-0 и звук отваливается.
+exec systemctl --user start wireplumber.service
+# Панели quickshell (меню по клику на модули waybar)
+exec sh -c "pgrep -x qs >/dev/null || env QT_QPA_PLATFORMTHEME=gtk3 qs"
+# Присмотр: поднимает quickshell, если он упал, и перезапускает, если подвис
+exec_always sh -c 'p="$(cat $HOME/.cache/wallpaper/watchdog.pid 2>/dev/null)"; if [ -z "$p" ] || ! grep -qa watchdog.sh /proc/"$p"/cmdline 2>/dev/null; then setsid -f $HOME/.config/quickshell/watchdog.sh >/dev/null 2>&1; fi'
+exec dbus-update-activation-environment --all
+exec swayidle -w timeout 300 'qs ipc call lock lock' timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' before-sleep 'qs ipc call lock lock'
+#
+# Example configuration:
+#
+#   output HDMI-A-1 resolution 1920x1080 position 1920,0
+#
+# You can get the names of your outputs by running: swaymsg -t get_outputs
+
+### Idle configuration
+#
+# Example configuration:
+#
+# exec swayidle -w \
+#          timeout 300 'swaylock -f -c 000000' \
+#          timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+#          before-sleep 'swaylock -f -c 000000'
+#
+# This will lock your screen after 300 seconds of inactivity, then turn off
+# your displays after another 300 seconds, and turn your screens back on when
+# resumed. It will also lock your screen before your computer goes to sleep.
+
+### Input configuration
+#
+# Example configuration:
+#
+#   input type:touchpad {
+#       dwt enabled
+#       tap enabled
+#       natural_scroll enabled
+#       middle_emulation enabled
+#   }
+#
+input type:keyboard {
+    xkb_layout "eu, ru"
+    xkb_options "grp:alt_shift_toggle"
+}
+
+input type:touchpad {
+    tap enabled              # тап = левый клик
+    natural_scroll disabled  # как в твоём Hyprland-конфиге; хочешь инверсию — enabled
+    dwt enabled              # не кликать ладонью при печати
+    middle_emulation enabled # 3 пальца = средняя кнопка
+    scroll_method two_finger # прокрутка двумя пальцами
+    accel_profile adaptive
+    pointer_accel 0
+}
+
+### Жесты тачпада (нативные, sway 1.12 / swayfx)
+# 3 пальца влево/вправо — следующий/предыдущий рабочий стол
+bindgesture swipe:3:left workspace next
+bindgesture swipe:3:right workspace prev
+# 4 пальца влево/вправо — то же самое (часть тачпадов шлёт 4 пальца)
+bindgesture swipe:4:left workspace next
+bindgesture swipe:4:right workspace prev
+# 4 пальца вверх/вниз — развернуть окно / убрать в scratchpad
+bindgesture swipe:4:up fullscreen toggle
+bindgesture swipe:4:down move scratchpad
+#
+# You can also configure each device individually.
+# Read `man 5 sway-input` for more information about this section.
+
+### Key bindings
+#
+# Один шаблон на все бинды: bindsym --to-code <сочетание> <команда>.
+# Группы идут по смыслу, правятся они из настроек (Mod+, → «Клавиши»):
+# скрипт меняет в строке только сочетание или только команду.
+
+# ── запуск и панели ─────────────────────────────────────────────────────────
+
+    # Терминал, файловый менеджер, браузер — переменные $term/$filemanager/$browser
+    bindsym --to-code $mod+Return exec $term
+    bindsym --to-code $mod+e exec $filemanager
+    bindsym --to-code $mod+b exec $browser
+
+    # Запуск приложений (панель quickshell, см. ~/.config/quickshell/panels/LauncherPanel.qml)
+    bindsym --to-code $mod+a exec $menu
+    # запасной вариант — wofi (тема та же, что у панелей)
+    bindsym --to-code $mod+Shift+a exec wofi --show drun
+
+    # Панели quickshell: настройки дотфайлов, эмодзи, поиск
+    bindsym --to-code $mod+comma exec qs ipc call panel toggle settings
+    bindsym --to-code $mod+period exec sh -c 'python3 $HOME/.config/quickshell/scripts/emoji-anchor.py; qs ipc call panel toggle emoji'
+    bindsym --to-code $mod+space exec qs ipc call panel toggle search
+
+    # Обои: панель выбора и случайные обои
+    bindsym --to-code $mod+Shift+w exec qs ipc call panel toggle wallpaper
+    bindsym --to-code $mod+Ctrl+w exec ~/.config/wallpaper/wallpaper.sh random
+
+    # Блокировка экрана: свой экран на quickshell (см. ~/.config/quickshell/lock/).
+    # $mod+l занят навигацией (focus right, vim-style), поэтому Ctrl+l.
+    bindsym --to-code $mod+Ctrl+l exec qs ipc call lock lock
+    # Запасной вариант — swaylock-effects (тема та же, что у панелей):
+    # если quickshell подвиснет, сессию всё равно можно запереть и отпереть.
+    bindsym --to-code $mod+Ctrl+Shift+l exec swaylock --config ~/.config/swaylock/config
+
+# ── окна ────────────────────────────────────────────────────────────────────
+
+    # Перетаскивание и изменение размера плавающих окон: $mod + левая/правая мышь.
+    # Имя историческое, работает и для обычных окон.
+    floating_modifier $mod normal
+
+    # Закрыть, переключить плавающий режим, полный экран
+    bindsym --to-code $mod+q kill
+    bindsym --to-code $mod+w floating toggle
+    bindsym --to-code $mod+Shift+space floating toggle
+    bindsym --to-code $mod+f fullscreen
+
+    # Раскладка: сплиты, стили, родительский контейнер
+    bindsym --to-code $mod+g splith
+    bindsym --to-code $mod+v splitv
+    bindsym --to-code $mod+s layout stacking
+    bindsym --to-code $mod+m layout tabbed
+    bindsym --to-code $mod+z layout toggle split
+    bindsym --to-code $mod+Ctrl+space focus mode_toggle
+    bindsym --to-code $mod+p focus parent
+
+    # Scratchpad (склад окон)
+    bindsym --to-code $mod+Shift+minus move scratchpad
+    bindsym --to-code $mod+minus scratchpad show
+
+    # Перезапуск и выход из sway (выход спрашивает подтверждение)
+    bindsym --to-code $mod+Shift+c reload
+    bindsym --to-code $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+
+# ── фокус и перенос окон ────────────────────────────────────────────────────
+
+    # Фокус: hjkl или стрелки
+    bindsym --to-code $mod+$left focus left
+    bindsym --to-code $mod+$down focus down
+    bindsym --to-code $mod+$up focus up
+    bindsym --to-code $mod+$right focus right
+    bindsym --to-code $mod+Left focus left
+    bindsym --to-code $mod+Down focus down
+    bindsym --to-code $mod+Up focus up
+    bindsym --to-code $mod+Right focus right
+
+    # Перенос окна: то же с Shift
+    bindsym --to-code $mod+Shift+$left move left
+    bindsym --to-code $mod+Shift+$down move down
+    bindsym --to-code $mod+Shift+$up move up
+    bindsym --to-code $mod+Shift+$right move right
+    bindsym --to-code $mod+Shift+Left move left
+    bindsym --to-code $mod+Shift+Down move down
+    bindsym --to-code $mod+Shift+Up move up
+    bindsym --to-code $mod+Shift+Right move right
+
+# ── рабочие столы ───────────────────────────────────────────────────────────
+
+    # Перейти на рабочий стол
+    bindsym --to-code $mod+1 workspace number 1
+    bindsym --to-code $mod+2 workspace number 2
+    bindsym --to-code $mod+3 workspace number 3
+    bindsym --to-code $mod+4 workspace number 4
+    bindsym --to-code $mod+5 workspace number 5
+    bindsym --to-code $mod+6 workspace number 6
+    bindsym --to-code $mod+7 workspace number 7
+    bindsym --to-code $mod+8 workspace number 8
+    bindsym --to-code $mod+9 workspace number 9
+    bindsym --to-code $mod+0 workspace number 10
+
+    # Унести окно на рабочий стол
+    bindsym --to-code $mod+Shift+1 move container to workspace number 1
+    bindsym --to-code $mod+Shift+2 move container to workspace number 2
+    bindsym --to-code $mod+Shift+3 move container to workspace number 3
+    bindsym --to-code $mod+Shift+4 move container to workspace number 4
+    bindsym --to-code $mod+Shift+5 move container to workspace number 5
+    bindsym --to-code $mod+Shift+6 move container to workspace number 6
+    bindsym --to-code $mod+Shift+7 move container to workspace number 7
+    bindsym --to-code $mod+Shift+8 move container to workspace number 8
+    bindsym --to-code $mod+Shift+9 move container to workspace number 9
+    bindsym --to-code $mod+Shift+0 move container to workspace number 10
+    # Имена могут быть любыми — 1–10 просто привычно.
+
+# ── звук и яркость ──────────────────────────────────────────────────────────
+
+    # Звук (wpctl)
+    bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
+    bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+    bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+    bindsym --to-code --locked XF86AudioMicMute exec wpctl set-source-mute \@DEFAULT_SOURCE@ toggle
+
+    # Клавиши плеера: играет тот трек, что показан в центре бара
+    bindsym --locked XF86AudioPlay exec playerctl -p playerctld play-pause
+    bindsym --locked XF86AudioPause exec playerctl -p playerctld play-pause
+    bindsym --locked XF86AudioNext exec playerctl -p playerctld next
+    bindsym --locked XF86AudioPrev exec playerctl -p playerctld previous
+    bindsym --locked XF86AudioStop exec playerctl -p playerctld stop
+
+    # Яркость. Запись в /sys/class/backlight требует прав —
+    # разово: sudo bash ~/.config/sway/fix-backlight.sh
+    bindsym --locked XF86MonBrightnessUp exec brightnessctl set +5%
+    bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
+
+# ── скриншоты ───────────────────────────────────────────────────────────────
+
+    # Print — весь экран в ~/Pictures, $mod+Shift+s — область в буфер
+    bindsym --to-code Print exec sh -c 'grim "$HOME/Pictures/$(date +%Y-%m-%d_%H-%M-%S).png"'
+    bindsym --to-code $mod+Shift+s exec sh -c 'grim -g "$(slurp)" - | wl-copy'
+
+# ── режим изменения размера (Mod+R) ─────────────────────────────────────────
+
+mode "resize" {
+    # hjkl: влево/вверх сужают, вправо/вниз растягивают
+    bindsym --to-code $left resize shrink width 10px
+    bindsym --to-code $down resize grow height 10px
+    bindsym --to-code $up resize shrink height 10px
+    bindsym --to-code $right resize grow width 10px
+
+    # То же стрелками
+    bindsym --to-code Left resize shrink width 10px
+    bindsym --to-code Down resize grow height 10px
+    bindsym --to-code Up resize shrink height 10px
+    bindsym --to-code Right resize grow width 10px
+
+    # Назад в обычный режим
+    bindsym --to-code Return mode "default"
+    bindsym --to-code Escape mode "default"
+}
+    bindsym --to-code $mod+r mode "resize"
+
+### Оформление окон (SwayFX)
+#
+# Рамок и заголовков нет (pixel 0), отступы между окнами — 8, до краёв экрана — 4,
+# углы скруглены, окна не «прилипают» к краям, у окон тень и блюр.
+# Блюр включается и слоям-панелям: waybar и popup-окнам quickshell.
+#
+    default_border pixel 0
+    default_floating_border pixel 0
+    smart_borders on
+    smart_gaps off
+
+    gaps inner 8
+    gaps outer 4
+
+    corner_radius 10
+    smart_corner_radius enable
+
+    shadows enable
+    shadow_blur_radius 20
+    shadow_color #2e3440
+    blur enable
+    blur_passes 3
+    blur_radius 5
+
+# Блюр под панелью waybar и под popup-панелями quickshell (namespace смотрим
+# через sway-ipc: "waybar" и "qs-panel")
+layer_effects "waybar" {
+    blur enable
+}
+
+layer_effects "qs-panel" {
+    blur enable
+}
+
+#
+# Status Bar:
+#
+# Панель — waybar, она запускается строкой exec_always выше.
+# Блок bar{} здесь не нужен: sway по нему запускал ВТОРУЮ waybar (-b bar-0),
+# а status_command/colors относятся к встроенной swaybar и не используются.
+include /etc/sway/config.d/*

@@ -1,0 +1,119 @@
+/* Полоса waybar. Цвета подставляет theme-render.py (см. ~/.config/wallpaper/). */
+
+/* --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ --- */
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Ndot55Caps", "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 0;
+}
+
+/* --- СПЛОШНАЯ ПАНЕЛЬ НА ВСЮ ШИРИНУ (прозрачность как у терминала: 0.75) --- */
+window#waybar {
+    background: alpha({{bg}}, 0.75);
+    color: {{accent}};
+    padding: 0 10px;
+}
+
+/* Модули — части одной полосы: без подложек, рамок и зазоров */
+#custom-title,
+#custom-clock,
+#custom-center,
+#custom-logo,
+#custom-power,
+#network,
+#memory,
+#battery,
+#backlight,
+#pulseaudio,
+#language,
+#tray {
+    background: transparent;
+    color: {{accent}};
+    margin: 0;
+    padding: 1px 14px 0;
+    /* тень только на тёмном фоне: на светлой теме приходит none (см. theme-render.py) */
+    text-shadow: {{text_shadow}};
+}
+
+/* --- РАЗДЕЛИТЕЛИ МЕЖДУ СЕКЦИЯМИ --- */
+#workspaces,
+#custom-center,
+#network,
+#memory,
+#battery,
+#backlight,
+#pulseaudio,
+#language,
+#tray,
+#custom-power {
+    border-left: 1px solid alpha({{accent}}, 0.22);
+}
+
+/* Название окна — в левом углу, цветом темы (акцент из палитры). Отделено от
+   часов разделителем справа; когда окна нет, модуль прячется вместе с ним. */
+#custom-title {
+    color: {{accent}};
+    border-right: 1px solid alpha({{accent}}, 0.22);
+}
+
+/* Логотип меню приложений — самый левый модуль бара. Он крупнее прочих модулей,
+   а отступы подобраны по метрикам глифа U+F303: его «чернила» шире боковой
+   рамки и вылезают вправо, поэтому справа отступа на ~6 px больше — визуально
+   значок стоит ровно по центру кнопки. */
+#custom-logo {
+    font-size: 16px;
+    padding: 1px 22px 0 16px;
+    border-right: 1px solid alpha({{accent}}, 0.22);
+}
+
+/* Центр занят только музыкой, закрыт с двух сторон */
+#custom-center {
+    border-right: 1px solid alpha({{accent}}, 0.22);
+}
+
+/* Кнопка меню приложений и кнопка питания: при наведении заливаются акцентом */
+#custom-logo:hover,
+#custom-power:hover {
+    color: {{on_accent}};
+    background: {{accent}};
+}
+
+/* Индикатор раскладки не отдаём под сжатие — эллипсис ему не нужен */
+#language {
+    min-width: 34px;
+}
+
+/* --- РАБОЧИЕ СТОЛЫ --- */
+#workspaces {
+    border-right: 1px solid alpha({{accent}}, 0.22);
+    padding: 0 6px;
+}
+
+#workspaces button {
+    padding: 1px 6px;
+    margin: 3px 1px;
+    color: alpha({{accent}}, 0.4);
+    background: transparent;
+    border-radius: 4px;
+}
+
+/* ВАЖНО: hover объявлен до active/focused/urgent,
+   иначе наведённая кнопка перебивает активную (кликнутый стол не подсвечивается) */
+#workspaces button:hover {
+    background: alpha({{accent}}, 0.18);
+    color: {{accent}};
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+    color: {{on_accent}};
+    background: {{accent}};
+}
+
+#workspaces button.urgent {
+    color: {{on_red}};
+    background: {{red}};
+}

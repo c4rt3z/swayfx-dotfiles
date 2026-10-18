@@ -1,0 +1,35 @@
+general.import = [
+  # цвета подставляет ~/.config/wallpaper/theme-gen.sh (схема или обои)
+  "~/.config/alacritty/wallpaper.toml"
+  # запасные варианты:
+  # "~/.config/alacritty/everforest-dark.toml"
+  #"~/.config/alacritty/catppuccin-latte.toml"
+  # "~/.config/alacritty/catppuccin-frappe.toml"
+  # "~/.config/alacritty/catppuccin-macchiato.toml"
+]
+
+
+# Настройки шрифта
+[font]
+normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
+bold = { family = "JetBrainsMono Nerd Font", style = "Bold" }
+italic = { family = "JetBrainsMono Nerd Font", style = "Italic" }
+bold_italic = { family = "JetBrainsMono Nerd Font", style = "Bold Italic" }
+size = 12.0
+
+[font.offset]
+x = 0
+y = 0
+
+[font.glyph_offset]
+x = 0
+y = 0
+
+# Настройки окна
+[window]
+opacity = 0.75
+padding = { x = 10, y = 10 }
+
+[env]
+# приложения, запущенные из терминала, берут тему из GTK (см. apps-theme.py)
+QT_QPA_PLATFORMTHEME = "gtk3"

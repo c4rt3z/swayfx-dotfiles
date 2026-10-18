@@ -1,0 +1,34 @@
+# Цвета терминала. Подставляет theme-render.py (~/.config/wallpaper/).
+# Подключается из alacritty.toml в general.import.
+
+[colors.primary]
+background = '{{bg}}'
+foreground = '{{fg}}'
+
+[colors.cursor]
+text = '{{on_accent}}'
+cursor = '{{accent}}'
+
+[colors.selection]
+text = '{{on_secondary_container}}'
+background = '{{secondary_container}}'
+
+[colors.normal]
+black = '{{ansi_black}}'
+red = '{{ansi_red}}'
+green = '{{ansi_green}}'
+yellow = '{{ansi_yellow}}'
+blue = '{{ansi_blue}}'
+magenta = '{{ansi_magenta}}'
+cyan = '{{ansi_cyan}}'
+white = '{{ansi_white}}'
+
+[colors.bright]
+black = '{{ansi_bright_black}}'
+red = '{{ansi_bright_red}}'
+green = '{{ansi_bright_green}}'
+yellow = '{{ansi_bright_yellow}}'
+blue = '{{ansi_bright_blue}}'
+magenta = '{{ansi_bright_magenta}}'
+cyan = '{{ansi_bright_cyan}}'
+white = '{{ansi_bright_white}}'

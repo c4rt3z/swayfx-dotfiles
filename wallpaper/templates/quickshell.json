@@ -1,0 +1,9 @@
+{
+  "base": "{{bg}}",
+  "surface": "{{surface}}",
+  "border": "{{outline_dim}}",
+  "text": "{{fg}}",
+  "accent": "{{accent}}",
+  "onAccent": "{{on_accent}}",
+  "red": "{{red}}"
+}

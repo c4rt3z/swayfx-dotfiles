@@ -1,0 +1,3 @@
+# Подпись строки поиска и размер иконок (цвета — в style.css от theme-render.py)
+prompt=поиск
+image-size=20
