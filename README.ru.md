@@ -7,7 +7,7 @@
 
 ![Рабочий стол](quickshell/docs/preview.png)
 
-![Настройки](quickshell/docs/settings.jpg)
+![Настройки](quickshell/docs/settings-preview.png)
 
 ## Что внутри
 
