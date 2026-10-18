@@ -1,5 +1,7 @@
 # swayfx-dotfiles
 
+English version — [README.md](README.md).
+
 Полностью готовый рабочий стол на SwayFX для CachyOS/Arch: панели **quickshell**
 поверх **sway**, бар на **waybar** и тема **Material You**, которая собирается из
 обоев — GTK, Qt, KDE, терминалы, бар и панели следуют ей и переключаются между
@@ -345,5 +347,3 @@ cp -r sway quickshell waybar wallpaper alacritty kitty matugen \
 Построено на [swayfx](https://github.com/Will-Lem/swayfx),
 [quickshell](https://quickshell.org), [waybar](https://github.com/Alexays/Waybar) и
 [matugen](https://github.com/InioX/matugen).
-
-English version — [README.md](README.md).
