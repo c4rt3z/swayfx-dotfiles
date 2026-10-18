@@ -168,6 +168,10 @@ ShellRoot {
         color: "transparent"
 
         WlrLayershell.layer: WlrLayer.Overlay
+        // Панель эмодзи — та же поверхность qs-panel, но растянута на весь
+        // экран. Чтобы блюр лёг только под карточку, а не под весь рабочий
+        // стол, у "qs-panel" включён blur_ignore_transparent (см. layer_effects
+        // в ~/.config/sway/config).
         WlrLayershell.namespace: "qs-panel"
         // клавиатуру забирает любая панель, кроме галереи обоев: только так
         // Esc дойдёт до панели, а не до окна под ней. Закрылась — композитор

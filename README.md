@@ -34,6 +34,7 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 ├── matugen/        config used to pull the palette out of the wallpaper
 ├── environment.d/  Qt apps follow GTK (QT_QPA_PLATFORMTHEME=gtk3)
 ├── install.sh      installer: packages, backup, copy into ~/.config
+├── LICENSE         MIT
 └── .gitignore      whitelist — only the desktop is published, the rest stays private
 ```
 
@@ -53,6 +54,11 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
 ## Install
 
+> **The installer is still rough.** It has not been tested on a clean system yet,
+> so surprises are possible. Start with the plan — `./install.sh --dry-run` — and
+> keep the `~/.config-backup-<date>` it makes. Bug reports are welcome in
+> [issues](https://github.com/c4rt3z/swayfx-dotfiles/issues).
+
 The installer does the boring part: checks the packages, backs up whatever you
 already had and lays the files out in `~/.config`:
 
@@ -62,15 +68,18 @@ cd ~/swayfx-dotfiles
 ./install.sh
 ```
 
-It refuses to run as root (the configs have to stay yours), installs only the
-missing packages with `pacman` (it will ask for your sudo password) and moves
-everything it replaces into `~/.config-backup-<date>/`. Its keys:
+It first asks for the output language (Russian or English, default from your
+locale). Then it refuses to run as root (the configs have to stay yours),
+installs only the missing packages with `pacman` (it will ask for your sudo
+password) and moves everything it replaces into `~/.config-backup-<date>/`. Its
+keys:
 
 | key | what it does |
 | --- | --- |
 | `--dry-run` | print the plan, change nothing |
 | `--yes` | don't ask, agree to everything |
 | `--no-deps` | skip the package check |
+| `--lang ru\|en` | output language, otherwise it asks |
 | `--config-dir DIR` | install into DIR instead of `~/.config` |
 
 No clone needed if you like one-liners (the script fetches the sources itself):
@@ -338,7 +347,9 @@ and register the code in `singletons/Lang.qml` and in `waybar/scripts/waybar-lan
 
 * SwayFX decorations are configured at the end of `sway/config`: no borders, 8px
   inner gaps, rounded corners, shadows and blur — including the blur under waybar
-  and under the quickshell panels (`layer_effects`).
+  and under the quickshell panels (`layer_effects`). `blur_ignore_transparent`
+  keeps the emoji picker honest: its surface covers the whole screen, but the blur
+  stays under the card only.
 * GIF wallpapers are animated by the quickshell wallpaper engine, which caches
   frames (`wallpaper/gif-cache.sh`).
 * The wallpaper panel, the search and the lock screen are quickshell windows, so a
@@ -355,3 +366,30 @@ Wallpaper theme engine, panels, scripts and translations by
 [c4rt3z](https://github.com/c4rt3z). Built on [swayfx](https://github.com/Will-Lem/swayfx),
 [quickshell](https://quickshell.org), [waybar](https://github.com/Alexays/Waybar) and
 [matugen](https://github.com/InioX/matugen).
+
+Ideas and inspiration:
+
+* [ilyamiro/serpantinum](https://github.com/ilyamiro/serpantinum) — the reference
+  for the shell as a whole: a quickshell desktop with panels, search and a theme
+  manager rather than plain dotfiles.
+* [luisbocanegra/kde-material-you-colors](https://github.com/luisbocanegra/kde-material-you-colors) —
+  the "wallpaper → Material You palette → every app" idea, the colour-variant set
+  (vibrant, monochrome, neutral, fruit-salad…) and the template approach.
+* [Material Color Utilities](https://github.com/material-foundation/material-color-utilities)
+  (Google) — the colour maths behind Material You, used here through matugen.
+* Colour schemes: [Catppuccin](https://github.com/catppuccin/catppuccin),
+  [Nord](https://www.nordtheme.com/), [Dracula](https://draculatheme.com/),
+  [Gruvbox](https://github.com/morhetz/gruvbox),
+  [Everforest](https://github.com/sainnhe/everforest),
+  [Kanagawa](https://github.com/rebelot/kanagawa.nvim),
+  [Tokyo Night](https://github.com/folke/tokyonight.nvim),
+  [Rosé Pine](https://github.com/rose-pine/rose-pine-theme) and
+  [One Dark](https://github.com/atom/one-dark-syntax) — each keeps its own license.
+* [JetBrains Mono](https://www.jetbrains.com/lp/mono/) with
+  [Nerd Fonts](https://www.nerdfonts.com/) patches — the only font here.
+
+## License
+
+[MIT](LICENSE) © 2026 c4rt3z. Take it, change it, publish it — just keep the
+copyright notice. Third-party colour schemes and cloned alacritty themes stay
+under their own licenses.

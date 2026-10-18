@@ -36,6 +36,7 @@ English version — [README.md](README.md).
 ├── matugen/        конфиг, которым палитра вытаскивается из обоев
 ├── environment.d/  Qt-программы берут тему из GTK (QT_QPA_PLATFORMTHEME=gtk3)
 ├── install.sh      установщик: пакеты, бэкап, раскладка по ~/.config
+├── LICENSE         MIT
 └── .gitignore      белый список — в репозиторий идёт только рабочий стол
 ```
 
@@ -56,6 +57,11 @@ English version — [README.md](README.md).
 
 ## Установка
 
+> **Установщик пока сырой.** На чистой системе он ещё не проверялся, так что
+> сюрпризы возможны. Начните с плана — `./install.sh --dry-run` — и не удаляйте
+> бэкап `~/.config-backup-<дата>`, который он сделает. О поломках пишите в
+> [issues](https://github.com/c4rt3z/swayfx-dotfiles/issues).
+
 Всё скучное делает установщик: проверяет пакеты, делает бэкап того, что у вас
 уже было, и раскладывает файлы по `~/.config`:
 
@@ -65,15 +71,17 @@ cd ~/swayfx-dotfiles
 ./install.sh
 ```
 
-От root он отказывается работать (конфиги должны остаться вашими), недостающие
-пакеты ставит через `pacman` (спросит пароль sudo), а всё, что заменяет,
-уносит в `~/.config-backup-<дата>/`. Ключи:
+Сначала он спросит язык вывода (русский или английский, по умолчанию — по вашей
+локали). От root он отказывается работать (конфиги должны остаться вашими),
+недостающие пакеты ставит через `pacman` (спросит пароль sudo), а всё, что
+заменяет, уносит в `~/.config-backup-<дата>/`. Ключи:
 
 | ключ | что делает |
 | --- | --- |
 | `--dry-run` | показать план и ничего не менять |
 | `--yes` | не задавать вопросов |
 | `--no-deps` | не проверять пакеты |
+| `--lang ru\|en` | язык вывода, иначе спросит |
 | `--config-dir DIR` | поставить в DIR вместо `~/.config` |
 
 Если хочется одной строкой (исходники скрипт скачает сам):
@@ -342,7 +350,9 @@ git pull
 
 * Оформление SwayFX — в конце `sway/config`: рамок нет, отступы 8 внутри и 4 до
   краёв, скруглённые углы, тени и блюр, в том числе под waybar и под панелями
-  quickshell (`layer_effects`).
+  quickshell (`layer_effects`). `blur_ignore_transparent` не даёт панели эмодзи
+  размыть весь экран: её поверхность во весь экран, а блюр остаётся только под
+  карточкой.
 * GIF-обои анимируются движком обоев в quickshell, кадры кэшируются
   (`wallpaper/gif-cache.sh`).
 * Панель обоев, поиск и экран блокировки — окна quickshell, поэтому сломавшуюся
@@ -359,3 +369,30 @@ git pull
 Построено на [swayfx](https://github.com/Will-Lem/swayfx),
 [quickshell](https://quickshell.org), [waybar](https://github.com/Alexays/Waybar) и
 [matugen](https://github.com/InioX/matugen).
+
+Идеи и вдохновение:
+
+* [ilyamiro/serpantinum](https://github.com/ilyamiro/serpantinum) — ориентир для
+  оболочки в целом: десктоп на quickshell с панелями, поиском и менеджером тем,
+  а не просто дотфайлы.
+* [luisbocanegra/kde-material-you-colors](https://github.com/luisbocanegra/kde-material-you-colors) —
+  идея «обои → палитра Material You → все приложения», набор вариантов схемы
+  (vibrant, monochrome, neutral, fruit-salad…) и подход с шаблонами.
+* [Material Color Utilities](https://github.com/material-foundation/material-color-utilities)
+  от Google — математика цвета Material You, здесь она работает через matugen.
+* Готовые схемы: [Catppuccin](https://github.com/catppuccin/catppuccin),
+  [Nord](https://www.nordtheme.com/), [Dracula](https://draculatheme.com/),
+  [Gruvbox](https://github.com/morhetz/gruvbox),
+  [Everforest](https://github.com/sainnhe/everforest),
+  [Kanagawa](https://github.com/rebelot/kanagawa.nvim),
+  [Tokyo Night](https://github.com/folke/tokyonight.nvim),
+  [Rosé Pine](https://github.com/rose-pine/rose-pine-theme) и
+  [One Dark](https://github.com/atom/one-dark-syntax) — у каждой своя лицензия.
+* [JetBrains Mono](https://www.jetbrains.com/lp/mono/) с патчами
+  [Nerd Fonts](https://www.nerdfonts.com/) — единственный шрифт здесь.
+
+## Лицензия
+
+[MIT](LICENSE) © 2026 c4rt3z. Берите, меняйте, публикуйте — только сохраните
+копирайт. Сторонние схемы и склонированные темы alacritty остаются под своими
+лицензиями.

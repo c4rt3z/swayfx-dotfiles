@@ -281,13 +281,16 @@ mode "resize" {
     blur_radius 5
 
 # Блюр под панелью waybar и под popup-панелями quickshell (namespace смотрим
-# через sway-ipc: "waybar" и "qs-panel")
+# через sway-ipc: "waybar" и "qs-panel"). blur_ignore_transparent рисует блюр
+# только под видимыми пикселями поверхности: у панели эмодзи поверхность во весь
+# экран, и без этого размывался бы весь рабочий стол, а не только карточка.
 layer_effects "waybar" {
     blur enable
 }
 
 layer_effects "qs-panel" {
     blur enable
+    blur_ignore_transparent enable
 }
 
 #
