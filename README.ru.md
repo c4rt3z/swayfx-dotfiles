@@ -2,7 +2,7 @@
 
 English version — [README.md](README.md).
 
-Полностью готовый рабочий стол на SwayFX для CachyOS/Arch: панели **quickshell**
+Полностью готовый рабочий стол на SwayFX для Arch/Arch-based дистров: панели **quickshell**
 поверх **sway**, бар на **waybar** и тема **Material You**, которая собирается из
 обоев — GTK, Qt, KDE, терминалы, бар и панели следуют ей и переключаются между
 светлым и тёмным видом вместе с обоями.
@@ -47,7 +47,7 @@ Material You пересобирает всю палитру под каждое 
 
 ## Что нужно
 
-* **CachyOS / Arch** со `swayfx` (SwayFX 0.6+, sway 1.12+) — обычный sway тоже
+* **Arch / Arch-based дистрибутив** со `swayfx` (SwayFX 0.6+, sway 1.12+) — обычный sway тоже
   подойдёт, просто блюр, тени и скругление углов останутся без эффекта
 * `waybar`, `quickshell` (0.3.2+), `python3` с **Pillow**, `jq`
 * шрифт **JetBrainsMono Nerd Font** — единственный, который используется
