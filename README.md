@@ -1,5 +1,7 @@
 # swayfx-dotfiles
 
+Русская версия — [README.ru.md](README.ru.md).
+
 A complete SwayFX desktop for CachyOS/Arch: **quickshell** panels on top of **sway**,
 a **waybar** bar, and a **Material You** theme that is generated from the wallpaper —
 GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
@@ -313,5 +315,3 @@ Wallpaper theme engine, panels, scripts and translations by
 [c4rt3z](https://github.com/c4rt3z). Built on [swayfx](https://github.com/Will-Lem/swayfx),
 [quickshell](https://quickshell.org), [waybar](https://github.com/Alexays/Waybar) and
 [matugen](https://github.com/InioX/matugen).
-
-Русская версия — [README.ru.md](README.ru.md).
