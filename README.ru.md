@@ -5,9 +5,9 @@
 обоев — GTK, Qt, KDE, терминалы, бар и панели следуют ей и переключаются между
 светлым и тёмным видом вместе с обоями.
 
-![Рабочий стол](quickshell/docs/preview.jpg)
+![Рабочий стол](quickshell/docs/preview.png)
 
-![Настройки](quickshell/docs/settings.jpg)
+![Настройки](quickshell/docs/settings-preview.png)
 
 ## Что внутри
 
