@@ -11,6 +11,11 @@ English version — [README.md](README.md).
 
 ![Настройки](quickshell/docs/settings.jpg)
 
+[![Material You и анимированные GIF-обои](quickshell/docs/material-you.jpg)](https://github.com/c4rt3z/swayfx-dotfiles/blob/main/quickshell/docs/material-you.mp4)
+
+**[Видео-демонстрация, 26 с, 39 МБ](https://github.com/c4rt3z/swayfx-dotfiles/blob/main/quickshell/docs/material-you.mp4)** —
+Material You пересобирает всю палитру под каждое фото, а анимированные GIF-обои продолжают анимироваться.
+
 ## Что внутри
 
 ```

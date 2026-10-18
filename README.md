@@ -10,6 +10,11 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
 ![Settings](quickshell/docs/settings.jpg)
 
+[![Material You and animated GIF wallpapers](quickshell/docs/material-you.jpg)](https://github.com/c4rt3z/swayfx-dotfiles/blob/main/quickshell/docs/material-you.mp4)
+
+**[Demo video, 26 s, 39 MB](https://github.com/c4rt3z/swayfx-dotfiles/blob/main/quickshell/docs/material-you.mp4)** —
+Material You rebuilds the whole palette from every wallpaper, and animated GIF wallpapers keep animating.
+
 ## What's inside
 
 ```
