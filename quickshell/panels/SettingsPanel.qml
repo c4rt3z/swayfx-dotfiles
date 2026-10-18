@@ -43,7 +43,7 @@ ColumnLayout {
         Column {
             id: sidebar
             Layout.alignment: Qt.AlignTop
-            Layout.preferredWidth: 178
+            Layout.preferredWidth: 210
             spacing: 2
 
             Repeater {
@@ -82,6 +82,11 @@ ColumnLayout {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
                         anchors.leftMargin: 32
+                        // длинные названия разделов не должны налезать на
+                        // страницу справа: ширина по сайдбару + многоточие
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        elide: Text.ElideRight
                         text: entry.modelData.name
                         font.pixelSize: 12
                         color: entry.active

@@ -23,10 +23,25 @@ ShellRoot {
 
     property string activePanel: ""
 
-    // Куда ставить выбор эмодзи: справа снизу от активного окна, как в Windows.
-    // Положение курсора sway не отдаёт, поэтому берём прямоугольник окна, в
-    // котором человек печатает: его пишет scripts/emoji-anchor.py (его же
-    // дёргает бинд Super+. перед открытием панели), а панель читает файл.
+    // Где курсор. sway его не отдаёт, поэтому «ловим» сами: панель эмодзи —
+    // это прозрачная поверхность во весь экран, и композитор, как только она
+    // появится под указателем, сразу пришлёт его координаты (см. pointerWatch
+    // в PanelWindow ниже). Карточка встаёт слева-сверху от курсора, то есть
+    // справа-снизу от него, как в Windows.
+    // Если события почему-то нет — через 150 мс падаем на прямоугольник
+    // активного окна, который пишет scripts/emoji-anchor.py.
+    property bool pointerKnown: false
+    property real pointerX: 0
+    property real pointerY: 0
+
+    onActivePanelChanged: {
+        if (activePanel === "emoji")
+            root.pointerKnown = false;
+    }
+
+    // Куда ставить выбор эмодзи, если позиция курсора неизвестна: прямоугольник
+    // активного окна (пишет scripts/emoji-anchor.py, его же дёргает бинд
+    // Super+. перед открытием панели).
     property var anchor: ({})
 
     FileView {
@@ -101,26 +116,30 @@ ShellRoot {
         visible: root.activePanel !== "" && loader.item !== null
 
         // Обычные панели висят справа сверху. Лаунчер — по центру экрана,
-        // плеер — по центру сверху, ровно под треком в баре, настройки — по
-        // центру по горизонтали и на всю высоту контента.
-        // По горизонтали центрирует сам композитор: right не привязан.
+        // плеер — по центру сверху, ровно под треком в баре, настройки — ровно
+        // по центру экрана (обе оси), эмодзи — карточка у курсора.
+        // По горизонтали центрирует сам композитор: right не привязан, как и
+        // top для настроек — композитор центрирует ту ось, что свободна.
         readonly property bool centered: root.activePanel === "launcher"
                                          || root.activePanel === "music"
                                          || root.activePanel === "settings"
-                                         || root.activePanel === "emoji"
                                          || root.activePanel === "search"
-        anchors.top: !win.atCursor
-        anchors.bottom: win.atCursor
-        anchors.right: !win.centered || win.atCursor
-        margins.top: root.activePanel === "launcher"
-                     ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
-                     : (root.activePanel === "search" ? win.spotlightTop : 40)
-        margins.bottom: win.anchorBottom
-        margins.right: win.atCursor ? win.anchorRight : 8
+        // эмодзи: поверхность во весь экран, карточка внутри — у курсора
+        readonly property bool overlay: root.activePanel === "emoji"
+        // настройки: центр по обеим осям
+        readonly property bool centering: root.activePanel === "settings"
 
-        // эмодзи — справа снизу от окна, остальные центрированные панели
-        // композитор центрирует сам
-        readonly property bool atCursor: root.activePanel === "emoji"
+        anchors.top: win.overlay ? true : !win.centering
+        anchors.bottom: win.overlay
+        anchors.left: win.overlay
+        anchors.right: win.overlay ? true : !win.centered
+        margins.top: win.overlay ? 0
+                     : (root.activePanel === "launcher"
+                        ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
+                        : (root.activePanel === "search" ? win.spotlightTop : 40))
+        margins.bottom: 0
+        margins.left: 0
+        margins.right: win.overlay ? 0 : 8
 
         readonly property real screenHeight: Quickshell.screens.length > 0
                                              ? Quickshell.screens[0].height : 1200
@@ -131,7 +150,8 @@ ShellRoot {
         // примерно на четверть экрана.
         readonly property real spotlightTop: Math.max(40, Math.round(screenHeight * 0.22))
 
-        // 8 пикселей внутрь от угла окна, но не за экран
+        // 8 пикселей внутрь от угла активного окна — запасной вариант, если
+        // позицию курсора узнать не получилось.
         readonly property real anchorRight: root.anchor.w !== undefined
                                             ? Math.max(8, screenWidth - (root.anchor.x + root.anchor.w) - 8)
                                             : 8
@@ -152,13 +172,18 @@ ShellRoot {
                                      ? WlrKeyboardFocus.Exclusive
                                      : WlrKeyboardFocus.OnDemand
 
-        implicitWidth: root.activePanel === "settings" ? 980
-                       : (root.activePanel === "wallpaper" ? 768
-                       : (root.activePanel === "launcher" ? 620
-                       : (root.activePanel === "music" ? 880
-                       : (root.activePanel === "emoji" ? 470
-                       : (root.activePanel === "search" ? 680 : 380)))))
-        implicitHeight: body.implicitHeight + 24
+        // ширина карточки панели (у эмодзи поверхность во весь экран, поэтому
+        // размеры окна и размеры карточки — разные вещи)
+        readonly property real contentWidth: root.activePanel === "settings" ? 980
+                                             : (root.activePanel === "wallpaper" ? 768
+                                             : (root.activePanel === "launcher" ? 620
+                                             : (root.activePanel === "music" ? 880
+                                             : (root.activePanel === "emoji" ? 470
+                                             : (root.activePanel === "search" ? 680 : 380)))))
+        implicitWidth: win.overlay ? win.screenWidth : win.contentWidth
+        // у эмодзи поверхность во весь экран: только так композитор скажет,
+        // где курсор
+        implicitHeight: win.overlay ? win.screenHeight : body.implicitHeight + 24
 
         function titleFor(n: string): string {
             if (n === "volume") return Lang.t("Громкость и микрофон");
@@ -176,8 +201,62 @@ ShellRoot {
             return "";
         }
 
-        Rectangle {
+        // Курсор: поверхность панели эмодзи появляется под указателем, и
+        // композитор присылает его координаты — запоминаем и ставим карточку
+        // слева-сверху от них. Клик мимо карточки закрывает панель.
+        MouseArea {
+            id: pointerWatch
             anchors.fill: parent
+            enabled: win.overlay
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+
+            // параметр-событие в этой версии Qt приходит не во все сигналы,
+            // поэтому берём mouseX/mouseY самого MouseArea
+            function note() {
+                root.pointerX = pointerWatch.mouseX;
+                root.pointerY = pointerWatch.mouseY;
+                root.pointerKnown = true;
+            }
+
+            onEntered: note()
+            onPositionChanged: note()
+            onClicked: {
+                if (!chrome.contains(pointerWatch.mouseX, pointerWatch.mouseY))
+                    root.activePanel = "";
+            }
+        }
+
+        // указатель не отдал позицию — берём угол активного окна
+        Timer {
+            interval: 150
+            repeat: false
+            running: win.overlay && !root.pointerKnown
+            onTriggered: {
+                root.pointerX = win.screenWidth - win.anchorRight;
+                root.pointerY = win.screenHeight - win.anchorBottom;
+                root.pointerKnown = true;
+            }
+        }
+
+        Rectangle {
+            id: chrome
+            // эмодзи: сама поверхность во весь экран прозрачная, а карточка
+            // висит у курсора
+            readonly property bool floating: win.overlay
+
+            width: chrome.floating ? win.contentWidth : win.width
+            height: chrome.floating ? body.implicitHeight + 24 : win.height
+            x: chrome.floating
+               ? Math.max(8, Math.min(root.pointerX + 18, win.screenWidth - chrome.width - 8))
+               : 0
+            y: chrome.floating
+               ? Math.max(8, Math.min(root.pointerY + 18, win.screenHeight - chrome.height - 8))
+               : 0
+            // пока курсор не пойман, карточку не показываем: иначе она мигнёт
+            // в левом верхнем углу
+            visible: !chrome.floating || root.pointerKnown
+
             radius: 10
             color: Colors.card
             border.width: 1
