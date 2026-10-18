@@ -8,7 +8,7 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
 ![Desktop](quickshell/docs/preview.png)
 
-![Settings](quickshell/docs/settings.jpg)
+![Settings](quickshell/docs/settings-preview.png)
 
 ## What's inside
 
