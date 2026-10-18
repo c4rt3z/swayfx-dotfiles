@@ -2,7 +2,7 @@
 
 Русская версия — [README.ru.md](README.ru.md).
 
-A complete SwayFX desktop for CachyOS/Arch: **quickshell** panels on top of **sway**,
+A complete SwayFX desktop for Arch/Arch-based distros: **quickshell** panels on top of **sway**,
 a **waybar** bar, and a **Material You** theme that is generated from the wallpaper —
 GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
@@ -45,7 +45,7 @@ Material You rebuilds the whole palette from every wallpaper, and animated GIF w
 
 ## Requirements
 
-* **CachyOS / Arch** with `swayfx` (SwayFX 0.6+, sway 1.12+) — plain sway works too,
+* **Arch / Arch-based distro** with `swayfx` (SwayFX 0.6+, sway 1.12+) — plain sway works too,
   only the blur/shadow/corner-radius options would be ignored
 * `waybar`, `quickshell` (0.3.2+), `python3` with **Pillow**, `jq`
 * **JetBrainsMono Nerd Font** — the only font used
