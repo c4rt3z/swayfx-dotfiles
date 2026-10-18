@@ -4,7 +4,7 @@ A complete SwayFX desktop for CachyOS/Arch: **quickshell** panels on top of **sw
 a **waybar** bar, and a **Material You** theme that is generated from the wallpaper —
 GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
-![Desktop](quickshell/docs/preview.jpg)
+![Desktop](quickshell/docs/preview.png)
 
 ![Settings](quickshell/docs/settings.jpg)
 
