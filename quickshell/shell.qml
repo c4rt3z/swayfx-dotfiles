@@ -31,12 +31,17 @@ ShellRoot {
     // Если события почему-то нет — через 150 мс падаем на прямоугольник
     // активного окна, который пишет scripts/emoji-anchor.py.
     property bool pointerKnown: false
+    // позицию дал сам указатель (а не запасной таймер): как только это так,
+    // положение замирает — карточка за курсором не бегает
+    property bool pointerHit: false
     property real pointerX: 0
     property real pointerY: 0
 
     onActivePanelChanged: {
-        if (activePanel === "emoji")
+        if (activePanel === "emoji") {
             root.pointerKnown = false;
+            root.pointerHit = false;
+        }
     }
 
     // Куда ставить выбор эмодзи, если позиция курсора неизвестна: прямоугольник
@@ -211,28 +216,40 @@ ShellRoot {
             hoverEnabled: true
             acceptedButtons: Qt.AllButtons
 
-            // параметр-событие в этой версии Qt приходит не во все сигналы,
-            // поэтому берём mouseX/mouseY самого MouseArea
+            // Позиция берётся один раз: карточка встаёт у курсора и дальше за
+            // ним не бегает, даже если человек водит мышью.
             function note() {
+                if (root.pointerHit)
+                    return;
                 root.pointerX = pointerWatch.mouseX;
                 root.pointerY = pointerWatch.mouseY;
+                root.pointerHit = true;
                 root.pointerKnown = true;
             }
 
             onEntered: note()
             onPositionChanged: note()
             onClicked: {
-                if (!chrome.contains(pointerWatch.mouseX, pointerWatch.mouseY))
+                // contains() в Qt6 принимает только QPointF, поэтому сравниваем
+                // координаты числами
+                const mx = pointerWatch.mouseX;
+                const my = pointerWatch.mouseY;
+                if (mx < chrome.x || mx > chrome.x + chrome.width
+                        || my < chrome.y || my > chrome.y + chrome.height)
                     root.activePanel = "";
             }
         }
 
-        // указатель не отдал позицию — берём угол активного окна
+        // указатель молчит — через 400 мс берём угол активного окна. Если после
+        // этого указатель всё-таки отзовётся, положение поправится: карточка
+        // прыгнет к курсору один раз и там останется.
         Timer {
-            interval: 150
+            interval: 400
             repeat: false
             running: win.overlay && !root.pointerKnown
             onTriggered: {
+                if (root.pointerHit)
+                    return;
                 root.pointerX = win.screenWidth - win.anchorRight;
                 root.pointerY = win.screenHeight - win.anchorBottom;
                 root.pointerKnown = true;
