@@ -33,6 +33,7 @@
 ├── xsettingsd/     GTK-настройки для программ вне GNOME
 ├── matugen/        конфиг, которым палитра вытаскивается из обоев
 ├── environment.d/  Qt-программы берут тему из GTK (QT_QPA_PLATFORMTHEME=gtk3)
+├── install.sh      установщик: пакеты, бэкап, раскладка по ~/.config
 └── .gitignore      белый список — в репозиторий идёт только рабочий стол
 ```
 
@@ -53,8 +54,35 @@
 
 ## Установка
 
-Весь `~/.config` — это git-репозиторий, поэтому клонируйте его в сторону и
-переносите папки руками (не клонируйте поверх собственного `~/.config`):
+Всё скучное делает установщик: проверяет пакеты, делает бэкап того, что у вас
+уже было, и раскладывает файлы по `~/.config`:
+
+```sh
+git clone https://github.com/c4rt3z/swayfx-dotfiles ~/swayfx-dotfiles
+cd ~/swayfx-dotfiles
+./install.sh
+```
+
+От root он отказывается работать (конфиги должны остаться вашими), недостающие
+пакеты ставит через `pacman` (спросит пароль sudo), а всё, что заменяет,
+уносит в `~/.config-backup-<дата>/`. Ключи:
+
+| ключ | что делает |
+| --- | --- |
+| `--dry-run` | показать план и ничего не менять |
+| `--yes` | не задавать вопросов |
+| `--no-deps` | не проверять пакеты |
+| `--config-dir DIR` | поставить в DIR вместо `~/.config` |
+
+Если хочется одной строкой (исходники скрипт скачает сам):
+
+```sh
+curl -fsSL https://github.com/c4rt3z/swayfx-dotfiles/raw/main/install.sh | bash
+```
+
+Руками, если так удобнее — весь `~/.config` это git-репозиторий, поэтому
+клонируйте его в сторону и переносите папки (не клонируйте поверх своего
+`~/.config`):
 
 ```sh
 git clone https://github.com/c4rt3z/swayfx-dotfiles ~/swayfx-dotfiles
@@ -63,14 +91,15 @@ cp -r sway quickshell waybar wallpaper alacritty kitty matugen \
       gtk-3.0 gtk-4.0 swaylock wofi xsettingsd environment.d ~/.config/
 ```
 
-Дальше:
+Дальше — любым из двух способов:
 
 1. положите обои в `~/Wallpapers` (любые картинки и `.gif` — они анимируются);
 2. **перезайдите в сеанс** — `environment.d/10-qt.conf` читается при входе,
    именно так Qt-программы узнают про тему GTK;
 3. запустите sway: бар и quickshell поднимутся сами (`exec_always` в `sway/config`);
 4. раскрасьте всё из обоев: `~/.config/wallpaper/wallpaper.sh random` или панель
-   обоев (`Super+Shift+W`);
+   обоев (`Super+Shift+W`); обоев пока нет? работает и готовая схема:
+   `~/.config/wallpaper/wallpaper.sh scheme nord`;
 5. клавишам яркости нужны права один раз: `sudo bash ~/.config/sway/fix-backlight.sh`.
 
 ## Тема

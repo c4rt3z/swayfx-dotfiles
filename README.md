@@ -31,6 +31,7 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 ├── xsettingsd/     GTK settings for non-GNOME apps
 ├── matugen/        config used to pull the palette out of the wallpaper
 ├── environment.d/  Qt apps follow GTK (QT_QPA_PLATFORMTHEME=gtk3)
+├── install.sh      installer: packages, backup, copy into ~/.config
 └── .gitignore      whitelist — only the desktop is published, the rest stays private
 ```
 
@@ -50,8 +51,34 @@ GTK, Qt, KDE, the terminals, waybar and the panels all follow it, light or dark.
 
 ## Install
 
-The whole `~/.config` is a git repository, so clone it somewhere else and copy
-the folders in (never clone over your own `~/.config`):
+The installer does the boring part: checks the packages, backs up whatever you
+already had and lays the files out in `~/.config`:
+
+```sh
+git clone https://github.com/c4rt3z/swayfx-dotfiles ~/swayfx-dotfiles
+cd ~/swayfx-dotfiles
+./install.sh
+```
+
+It refuses to run as root (the configs have to stay yours), installs only the
+missing packages with `pacman` (it will ask for your sudo password) and moves
+everything it replaces into `~/.config-backup-<date>/`. Its keys:
+
+| key | what it does |
+| --- | --- |
+| `--dry-run` | print the plan, change nothing |
+| `--yes` | don't ask, agree to everything |
+| `--no-deps` | skip the package check |
+| `--config-dir DIR` | install into DIR instead of `~/.config` |
+
+No clone needed if you like one-liners (the script fetches the sources itself):
+
+```sh
+curl -fsSL https://github.com/c4rt3z/swayfx-dotfiles/raw/main/install.sh | bash
+```
+
+By hand, if you prefer — the whole `~/.config` is a git repository, so clone it
+somewhere else and copy the folders in (never clone over your own `~/.config`):
 
 ```sh
 git clone https://github.com/c4rt3z/swayfx-dotfiles ~/swayfx-dotfiles
@@ -60,7 +87,7 @@ cp -r sway quickshell waybar wallpaper alacritty kitty matugen \
       gtk-3.0 gtk-4.0 swaylock wofi xsettingsd environment.d ~/.config/
 ```
 
-Then:
+Then, either way:
 
 1. put wallpapers into `~/Wallpapers` (any images and `.gif` — they animate);
 2. **log out and back in** — `environment.d/10-qt.conf` is read at login, that's how
@@ -68,7 +95,8 @@ Then:
 3. start sway; the config starts waybar and quickshell itself
    (`exec_always` lines in `sway/config`);
 4. paint everything from the wallpaper: `~/.config/wallpaper/wallpaper.sh random`
-   or the wallpaper panel (`Super+Shift+W`);
+   or the wallpaper panel (`Super+Shift+W`); no wallpapers yet? a ready-made
+   scheme works too: `~/.config/wallpaper/wallpaper.sh scheme nord`;
 5. brightness keys need one-time rights: `sudo bash ~/.config/sway/fix-backlight.sh`.
 
 ## Theming
