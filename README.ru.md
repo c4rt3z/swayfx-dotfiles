@@ -7,9 +7,9 @@ English version — [README.md](README.md).
 обоев — GTK, Qt, KDE, терминалы, бар и панели следуют ей и переключаются между
 светлым и тёмным видом вместе с обоями.
 
-![Рабочий стол](quickshell/docs/preview.png)
+![Рабочий стол](quickshell/docs/preview.jpg)
 
-![Настройки](quickshell/docs/settings-preview.png)
+![Настройки](quickshell/docs/settings.jpg)
 
 ## Что внутри
 
