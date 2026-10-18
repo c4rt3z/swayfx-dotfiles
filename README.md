@@ -101,6 +101,18 @@ Then, either way:
    scheme works too: `~/.config/wallpaper/wallpaper.sh scheme nord`;
 5. brightness keys need one-time rights: `sudo bash ~/.config/sway/fix-backlight.sh`.
 
+### Updating
+
+The clone is a normal git repository: pull it and run the installer again. It
+backs up whatever it replaces and keeps your personal bits — the interface
+language and the "as it was" snapshot of the key bindings:
+
+```sh
+cd ~/swayfx-dotfiles
+git pull
+./install.sh
+```
+
 ## Theming
 
 ```

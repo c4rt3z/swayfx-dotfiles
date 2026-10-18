@@ -104,6 +104,18 @@ cp -r sway quickshell waybar wallpaper alacritty kitty matugen \
    `~/.config/wallpaper/wallpaper.sh scheme nord`;
 5. клавишам яркости нужны права один раз: `sudo bash ~/.config/sway/fix-backlight.sh`.
 
+### Обновление
+
+Клон — это обычный git-репозиторий: обновите его и запустите установщик снова.
+Он уносит в бэкап то, что заменяет, и сохраняет ваше личное — язык интерфейса и
+снимок «как было» для горячих клавиш:
+
+```sh
+cd ~/swayfx-dotfiles
+git pull
+./install.sh
+```
+
 ## Тема
 
 ```
