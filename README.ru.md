@@ -27,6 +27,7 @@ Material You пересобирает всю палитру под каждое 
 │   │                 клавиши, раскладки, приложения по умолчанию, службы…)
 │   ├── scripts/      python: движок поиска, индексы приложений/биндов/раскладок
 │   ├── i18n/         языки интерфейса: ru (исходный), en, uk, de
+│   ├── sidebar/      сайдбар: буфер обмена, снимки экрана, кнопки сессии
 │   ├── lock/         экран блокировки (вместо swaylock)
 │   └── docs/         скриншоты
 ├── waybar/         бар и его скрипты (заголовок окна, часы, медиацентр, раскладка)
@@ -53,6 +54,7 @@ Material You пересобирает всю палитру под каждое 
 * шрифт **JetBrainsMono Nerd Font** — единственный, который используется
 * терминалы: `alacritty` и/или `kitty`
 * остальное, что зовёт конфиг: `wofi`, `grim`, `slurp`, `wl-clipboard`,
+  `tesseract` (по желанию — распознавание текста со снимков),
   `brightnessctl`, `playerctl`, `wireplumber` (wpctl), `xdg-utils` (xdg-mime),
   `matugen`, `ffmpeg`, `gsettings` (glib2), `swayidle`, `swaylock-effects`
   (запасная блокировка)
@@ -189,6 +191,38 @@ git pull
 `waybar/scripts/waybar-lang.py` (он переводит тексты модулей бара). Переключение
 применяется сразу, перезапускать ничего не надо.
 
+## Сайдбар, погода и календарь
+
+`Super+D` (или `Super+\``) открывает **сайдбар** — панель шириной в четверть
+экрана. Внутри три блока:
+
+* **сессия** — плитки по две в ряд: блокировка, смена пользователя, сон, выход,
+  перезагрузка и выключение. Опасные действия просят второго нажатия;
+* **снимки экрана** — четыре кнопки (область, окно, весь экран, через три
+  секунды) и лента свежих снимков: копировать, распознать текст, открыть,
+  удалить;
+* **буфер обмена** — история текста и картинок. Отдельный пакет не нужен:
+  `wl-paste --watch` отдаёт содержимое скрипту `quickshell/scripts/clipboard.py`,
+  тот и ведёт историю. Скопированный снимок экрана тоже попадает сюда.
+
+Снимки кладутся в `~/Pictures/Screenshots`, сразу копируются в буфер и
+показываются уведомлением. Распознавание текста работает, если установлен
+`tesseract` (по желанию; для русского — ещё `tesseract-data-rus`).
+
+**Погода** — крайний левый модуль после логотипа: иконка из шрифта (Nerd Font,
+не эмодзи) и температура. Источник настраивается в `Super+,` → «Погода»:
+open-meteo работает без ключа и регистрации, ключ OpenWeather включает их
+данные. Там же ищется город и выбираются единицы (°C/°F).
+
+**Календарь и таймер** — клик по часам в баре (или `Super+C`): месяц с
+выделенным сегодняшним днём, погода и таймер с пресетами от 1 до 45 минут.
+Отсчёт живёт в оболочке, поэтому панель можно закрыть — по нулю придёт
+уведомление.
+
+**Ссылки на разделы настроек**: `qs ipc call settings open weather` открывает
+настройки сразу на нужном разделе (home, appearance, language, apps, bar,
+weather, keys, languages, defaults, services).
+
 ## Горячие клавиши
 
 `Mod` — это <kbd>Super</kbd>. Полный список ровно в том виде, в каком он лежит в
@@ -231,8 +265,11 @@ git pull
 
 | Сочетание | Команда |
 | --- | --- |
-| `Super+Shift+S` | `exec sh -c 'grim -g "$(slurp)" - \| wl-copy'` |
-| `Снимок экрана` | `exec sh -c 'grim "$HOME/Pictures/$(date +%Y-%m-%d_%H-%M-%S).png"'` |
+| `Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py full` |
+| `Shift+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py region` |
+| `Super+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py window` |
+| `Ctrl+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py full 3` |
+| `Super+Shift+S` | `exec python3 $HOME/.config/quickshell/scripts/shot.py region` |
 
 **Окно**
 
@@ -339,6 +376,9 @@ git pull
 | `Super+-` | `scratchpad show` |
 | `Super+A` | `exec qs ipc call panel open launcher` |
 | `Super+B` | `exec firefox` |
+| `Super+C` | `exec qs ipc call panel toggle calendar` |
+| `Super+D` | `exec qs ipc call sidebar toggle` |
+| ``Super+` `` | `exec qs ipc call sidebar toggle` |
 | `Super+Ctrl+L` | `exec qs ipc call lock lock` |
 | `Super+Ctrl+W` | `exec ~/.config/wallpaper/wallpaper.sh random` |
 | `Super+E` | `exec dolphin` |

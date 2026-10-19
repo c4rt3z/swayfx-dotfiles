@@ -1,0 +1,628 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import "../components"
+import "../singletons"
+
+// Сайдбар: выезжает слева по Mod+B, занимает четверть экрана.
+//
+// Что внутри:
+//   • плитки сессии (по две в ряд) — выключить, перезагрузить, выйти и прочее;
+//   • снимки экрана: кнопки «область / окно / экран / с задержкой» и свежие
+//     снимки с действиями (копировать, распознать текст, открыть, удалить);
+//   • история буфера обмена — текст и картинки (её ведёт scripts/clipboard.py,
+//     нас зовёт wl-paste на каждое новое выделение).
+//
+// Экраны не перекрываем: поверхность занимает только свою четверть, остальное
+// окно остаётся рабочим столом.
+PanelWindow {
+    id: side
+
+    readonly property string home: Quickshell.env("HOME") ?? ""
+    readonly property string clipScript: home + "/.config/quickshell/scripts/clipboard.py"
+    readonly property string shotScript: home + "/.config/quickshell/scripts/shot.py"
+
+    // Четверть экрана, но в разумных пределах: на 1366 px — 360, на 2560 — 560.
+    readonly property real preferredWidth: Math.max(360, Math.min(560, Math.round(screen.width * 0.24)))
+
+    property var clips: []
+    property var shots: []
+    property var powerItems: [
+        { icon: "\uF023", label: Lang.t("Заблокировать"), run: "lock", confirm: false },
+        { icon: "\uF007", label: Lang.t("Смена пользователя"), run: "greeter", confirm: true },
+        { icon: "\uF186", label: Lang.t("Сон"), run: "suspend", confirm: true },
+        { icon: "\uF08B", label: Lang.t("Выйти из сессии"), run: "logout", confirm: true },
+        { icon: "\uF01E", label: Lang.t("Перезагрузить"), run: "reboot", confirm: true },
+        { icon: "\uF011", label: Lang.t("Выключить"), run: "poweroff", confirm: true }
+    ]
+    property int armed: -1
+    property bool busy: false
+
+    // Открытие-закрытие: список перечитываем каждый раз, чтобы он не устаревал.
+    visible: Sidebar.open
+    onVisibleChanged: if (visible) refresh()
+
+    function refresh() {
+        clipsView.reload();
+        shotsProcess.running = true;
+    }
+
+    function choosePower(index) {
+        const item = powerItems[index];
+        if (item.confirm && armed !== index) {
+            armed = index;
+            disarm.restart();
+            return;
+        }
+        armed = -1;
+        runPower(item.run);
+    }
+
+    function runPower(run) {
+        if (run === "lock") {
+            Quickshell.execDetached(["qs", "ipc", "call", "lock", "lock"]);
+            Sidebar.hide();
+        } else if (run === "greeter") {
+            Quickshell.execDetached(["dbus-send", "--system", "--print-reply",
+                "--dest=org.freedesktop.DisplayManager",
+                "/org/freedesktop/DisplayManager/Seat0",
+                "org.freedesktop.DisplayManager.Seat.SwitchToGreeter"]);
+            Sidebar.hide();
+        } else if (run === "suspend") {
+            Quickshell.execDetached(["systemctl", "suspend"]);
+            Sidebar.hide();
+        } else if (run === "logout") {
+            Quickshell.execDetached(["swaymsg", "exit"]);
+        } else if (run === "reboot") {
+            Quickshell.execDetached(["systemctl", "reboot"]);
+        } else if (run === "poweroff") {
+            Quickshell.execDetached(["systemctl", "poweroff"]);
+        }
+    }
+
+    function takeShot(mode) {
+        shotsProcess.running = false;
+        shotAction.command = ["python3", shotScript, mode];
+        shotAction.running = true;
+        busy = true;
+    }
+
+    function copyClip(id) {
+        clipAction.command = ["python3", clipScript, "copy", id];
+        clipAction.running = true;
+    }
+
+    function removeClip(id) {
+        clipAction.command = ["python3", clipScript, "remove", id];
+        clipAction.running = true;
+    }
+
+    function clearClips() {
+        clipAction.command = ["python3", clipScript, "clear"];
+        clipAction.running = true;
+    }
+
+    function shotAction2(cmd, path) {
+        shotAction.command = ["python3", shotScript, cmd, path];
+        shotAction.running = true;
+        busy = true;
+    }
+
+    anchors.left: true
+    anchors.top: true
+    anchors.bottom: true
+    anchors.right: false
+    margins.left: 8
+    margins.top: 42                        // под баром waybar
+    margins.bottom: 8
+
+    exclusiveZone: -1
+    focusable: true
+    color: "transparent"
+    implicitWidth: preferredWidth
+
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "qs-panel"
+    // клавиатуру забираем, только пока открыт: Esc должен доходить до нас
+    WlrLayershell.keyboardFocus: Sidebar.open
+        ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    Timer {
+        id: disarm
+        interval: 3000
+        onTriggered: side.armed = -1
+    }
+
+    // Пока открыт — раз в 2 секунды подтягиваем свежие снимки и буфер: снимок
+    // мог родиться по Print, а выделение — скопироваться мимо сайдбара.
+    Timer {
+        interval: 2000
+        repeat: true
+        running: Sidebar.open
+        onTriggered: side.refresh()
+    }
+
+    // история буфера: index.json меняет сам watcher, поэтому просто смотрим файл
+    FileView {
+        id: clipsView
+        path: side.home + "/.cache/quickshell/clipboard/index.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            let raw = typeof text === "function" ? text() : text;
+            try {
+                const parsed = JSON.parse(raw || "{}");
+                side.clips = parsed.items || [];
+            } catch (e) {
+                side.clips = [];
+            }
+        }
+    }
+
+    Process {
+        id: shotsProcess
+        command: ["python3", side.shotScript, "list", "12"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    side.shots = (JSON.parse(this.text || "{}").items) || [];
+                } catch (e) {
+                    side.shots = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: shotAction
+        onExited: {
+            side.busy = false;
+            shotsProcess.running = true;
+            clipsView.reload();
+        }
+    }
+
+    Process {
+        id: clipAction
+        onExited: clipsView.reload()
+    }
+
+    Rectangle {
+        id: chrome
+
+        anchors.fill: parent
+        radius: 10
+        color: Colors.card
+        border.width: 1
+        border.color: Colors.border
+        focus: true
+
+        Keys.onEscapePressed: Sidebar.hide()
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 10
+
+            // ── заголовок ──────────────────────────────────────────────────
+            RowLayout {
+                Layout.fillWidth: true
+
+                Label {
+                    text: "\uF0C9"
+                    color: Colors.accent
+                    font.pixelSize: 15
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: Lang.t("Панель")
+                    color: Colors.text
+                    font.pixelSize: 14
+                    font.bold: true
+                }
+
+                Label {
+                    id: clockLabel
+                    text: Qt.formatDateTime(new Date(), "HH:mm")
+                    color: Colors.dim
+                    font.pixelSize: 13
+
+                    Timer {
+                        interval: 1000
+                        repeat: true
+                        running: side.visible
+                        onTriggered: clockLabel.text = Qt.formatDateTime(new Date(), "HH:mm")
+                    }
+                }
+
+                Item {
+                    implicitWidth: 22
+                    implicitHeight: 22
+
+                    Label {
+                        anchors.centerIn: parent
+                        text: "\u00d7"
+                        color: closeHover.containsMouse ? Colors.text : Colors.dim
+                        font.pixelSize: 16
+                    }
+                    MouseArea {
+                        id: closeHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: Sidebar.hide()
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 1
+                color: Colors.divider
+            }
+
+            Flickable {
+                id: scroller
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentHeight: content.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+
+                ColumnLayout {
+                    id: content
+                    width: scroller.width
+                    spacing: 12
+
+                    // ── сессия: по две плитки в ряд ────────────────────────
+                    Label {
+                        text: Lang.t("Сессия")
+                        color: Colors.muted
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        columnSpacing: 8
+                        rowSpacing: 8
+
+                        Repeater {
+                            model: side.powerItems
+
+                            delegate: Item {
+                                id: powerTile
+
+                                required property var modelData
+                                required property int index
+
+                                readonly property bool armedHere: side.armed === index
+
+                                Layout.fillWidth: true
+                                implicitHeight: 46
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 8
+                                    color: powerTile.armedHere ? Qt.alpha(Colors.red, 0.18)
+                                         : (powerHover.containsMouse ? Colors.selected : "transparent")
+                                    border.width: 1
+                                    border.color: powerTile.armedHere ? Colors.red
+                                                : (powerHover.containsMouse ? Colors.accent : Colors.divider)
+                                }
+
+                                ColumnLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 2
+
+                                    Label {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        text: modelData.icon
+                                        color: powerTile.armedHere ? Colors.red
+                                             : (modelData.run === "poweroff" ? Colors.red
+                                             : (powerHover.containsMouse ? Colors.text : Colors.muted))
+                                        font.pixelSize: 15
+                                    }
+
+                                    Label {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        text: powerTile.armedHere ? Lang.t("ещё раз") : modelData.label
+                                        color: powerTile.armedHere ? Colors.red
+                                             : (powerHover.containsMouse ? Colors.text : Colors.muted)
+                                        font.pixelSize: 10
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: powerHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onEntered: if (side.armed !== powerTile.index) side.armed = -1
+                                    onClicked: side.choosePower(powerTile.index)
+                                }
+                            }
+                        }
+                    }
+
+                    // ── скриншоты ─────────────────────────────────────────
+                    Label {
+                        text: Lang.t("Снимки экрана")
+                        color: Colors.muted
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        columnSpacing: 8
+                        rowSpacing: 8
+
+                        Repeater {
+                            model: [
+                                { icon: "\uF125", label: Lang.t("Область"), mode: "region" },
+                                { icon: "\uF2D0", label: Lang.t("Окно"), mode: "window" },
+                                { icon: "\uF108", label: Lang.t("Весь экран"), mode: "full" },
+                                { icon: "\uF017", label: Lang.t("Через 3 с"), mode: "full 3" }
+                            ]
+
+                            delegate: Item {
+                                required property var modelData
+
+                                Layout.fillWidth: true
+                                implicitHeight: 38
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 8
+                                    color: shotHover.containsMouse ? Colors.selected : "transparent"
+                                    border.width: 1
+                                    border.color: shotHover.containsMouse ? Colors.accent : Colors.divider
+                                }
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 8
+
+                                    Label {
+                                        text: modelData.icon
+                                        color: shotHover.containsMouse ? Colors.accent : Colors.muted
+                                        font.pixelSize: 13
+                                    }
+                                    Label {
+                                        text: modelData.label
+                                        color: shotHover.containsMouse ? Colors.text : Colors.muted
+                                        font.pixelSize: 11
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: shotHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        const parts = modelData.mode.split(" ");
+                                        shotAction.command = ["python3", side.shotScript].concat(parts);
+                                        shotAction.running = true;
+                                        side.busy = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // свежие снимки с действиями
+                    GridLayout {
+                        Layout.fillWidth: true
+                        visible: side.shots.length > 0
+                        columns: 2
+                        columnSpacing: 8
+                        rowSpacing: 8
+
+                        Repeater {
+                            model: side.shots.slice(0, 6)
+
+                            delegate: ColumnLayout {
+                                id: shotCard
+
+                                required property var modelData
+
+                                Layout.fillWidth: true
+                                spacing: 4
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 74
+                                    radius: 6
+                                    color: Colors.selected
+                                    border.width: 1
+                                    border.color: Colors.divider
+                                    clip: true
+
+                                    Image {
+                                        anchors.fill: parent
+                                        anchors.margins: 2
+                                        asynchronous: true
+                                        fillMode: Image.PreserveAspectFit
+                                        source: "file://" + modelData.path
+                                        sourceSize.width: 320
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: side.shotAction2("copy", modelData.path)
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: modelData.name.replace(/\.png$/, "").replace("_", " ")
+                                        color: Colors.dim
+                                        font.pixelSize: 9
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Repeater {
+                                        model: [
+                                            { icon: "\uF0C5", act: "copy", tip: "копировать" },
+                                            { icon: "\uF031", act: "ocr", tip: "распознать" },
+                                            { icon: "\uF08E", act: "open", tip: "открыть" },
+                                            { icon: "\uF1F8", act: "remove", tip: "удалить" }
+                                        ]
+
+                                        delegate: Label {
+                                            required property var modelData
+                                            text: modelData.icon
+                                            color: shotIcon.containsMouse ? Colors.text : Colors.muted
+                                            font.pixelSize: 11
+
+                                            MouseArea {
+                                                id: shotIcon
+                                                anchors.fill: parent
+                                                anchors.margins: -4
+                                                hoverEnabled: true
+                                                onClicked: side.shotAction2(modelData.act, shotCard.modelData.path)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── буфер обмена ──────────────────────────────────────
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: Lang.t("Буфер обмена") + (side.clips.length > 0 ? " · " + side.clips.length : "")
+                            color: Colors.muted
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+
+                        Label {
+                            visible: side.clips.length > 0
+                            text: Lang.t("очистить")
+                            color: clearHover.containsMouse ? Colors.red : Colors.dim
+                            font.pixelSize: 10
+
+                            MouseArea {
+                                id: clearHover
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                hoverEnabled: true
+                                onClicked: side.clearClips()
+                            }
+                        }
+                    }
+
+                    Label {
+                        Layout.fillWidth: true
+                        visible: side.clips.length === 0
+                        text: Lang.t("Пусто: скопируйте что-нибудь — появится здесь")
+                        color: Colors.dim
+                        font.pixelSize: 11
+                        wrapMode: Text.WordWrap
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Repeater {
+                            model: side.clips.slice(0, 30)
+
+                            delegate: Item {
+                                id: clipRow
+
+                                required property var modelData
+
+                                Layout.fillWidth: true
+                                implicitHeight: modelData.kind === "image" ? 44 : 30
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 6
+                                    color: clipHover.containsMouse ? Colors.selected : "transparent"
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 6
+                                    spacing: 8
+
+                                    Image {
+                                        visible: modelData.kind === "image"
+                                        Layout.preferredWidth: 38
+                                        Layout.preferredHeight: 34
+                                        asynchronous: true
+                                        fillMode: Image.PreserveAspectCrop
+                                        source: modelData.kind === "image" ? "file://" + modelData.path : ""
+                                        sourceSize.width: 120
+                                    }
+
+                                    Label {
+                                        visible: modelData.kind !== "image"
+                                        text: "\uF0C1"
+                                        color: Colors.muted
+                                        font.pixelSize: 11
+                                    }
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: modelData.kind === "image"
+                                              ? Lang.t("Картинка") + " · " + Math.round(modelData.size / 1024)
+                                                + " " + Lang.t("КБ")
+                                              : (modelData.preview || "")
+                                        color: Colors.text
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Label {
+                                        text: "\u00d7"
+                                        color: clipRemove.containsMouse ? Colors.red : Colors.dim
+                                        font.pixelSize: 13
+
+                                        MouseArea {
+                                            id: clipRemove
+                                            anchors.fill: parent
+                                            anchors.margins: -4
+                                            hoverEnabled: true
+                                            onClicked: side.removeClip(clipRow.modelData.id)
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: clipHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    // клик по тексту копирует, по крестику — удаляет:
+                                    // крестик лежит выше и забирает клик себе
+                                    onClicked: side.copyClip(clipRow.modelData.id)
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 2
+                    }
+                }
+            }
+        }
+    }
+}

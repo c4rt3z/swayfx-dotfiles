@@ -104,7 +104,7 @@ GROUPS = [
     (r"swaylock", tr("Блокировка")),
     (r"brightnessctl", tr("Яркость")),
     (r"pactl|playerctl|wpctl|mediactl", tr("Звук и медиа")),
-    (r"grim|slurp|swappy|screenshot", tr("Скриншоты")),
+    (r"grim|slurp|swappy|screenshot|shot\.py", tr("Скриншоты")),
     (r"^exec\s+swaymsg\s+output|^exec\s+wdisplays", tr("Мониторы")),
     (r"^exec", tr("Запуск")),
     (r"^kill", tr("Окно")),

@@ -1,3 +1,5 @@
 singleton Colors 1.0 Colors.qml
 singleton Lock 1.0 Lock.qml
 singleton Lang 1.0 Lang.qml
+singleton Sidebar 1.0 Sidebar.qml
+singleton Countdown 1.0 Countdown.qml

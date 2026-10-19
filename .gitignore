@@ -36,6 +36,9 @@ __pycache__/
 # создаются на месте, у каждого человека свои
 quickshell/language
 quickshell/keys-default.json
+# настройки погоды (там может лежать ключ OpenWeather) и шрифтов — свои у каждого
+quickshell/weather.json
+quickshell/fonts.json
 
 # сторонние темы alacritty — отдельный репозиторий, ставится клоном
 # (см. README: ~/.config/alacritty/themes)

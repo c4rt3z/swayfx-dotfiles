@@ -5,6 +5,7 @@
   "spacing": 0,
   "modules-left": [
     "custom/logo",
+    "custom/weather",
     "custom/title",
     "custom/clock",
     "sway/workspaces"
@@ -31,7 +32,15 @@
   "custom/clock": {
     "exec": "~/.config/waybar/scripts/clock.sh",
     "interval": 10,
-    "tooltip": false
+    "tooltip": false,
+    "on-click": "qs ipc call panel toggle calendar"
+  },
+  "custom/weather": {
+    "exec": "python3 ~/.config/quickshell/scripts/weather.py bar",
+    "interval": 900,
+    "return-type": "json",
+    "tooltip": true,
+    "on-click": "qs ipc call panel toggle calendar"
   },
   "sway/workspaces": {
     "disable-scroll": true,

@@ -22,6 +22,7 @@ window#waybar {
 #custom-clock,
 #custom-center,
 #custom-logo,
+#custom-weather,
 #custom-power,
 #network,
 #memory,
@@ -72,6 +73,53 @@ window#waybar {
 /* Центр занят только музыкой, закрыт с двух сторон */
 #custom-center {
     border-right: 1px solid alpha(#ffb783, 0.22);
+}
+
+/* Погода: иконка — глифом из шрифта (Nerd Font), рядом градусы. Значок
+   подкрашивается по погоде: ясно — тёплым, дождь — синим, гроза — сиреневым.
+   Класс приходит из scripts/weather.py вместе с текстом модуля. */
+#custom-weather {
+    border-right: 1px solid alpha(#ffb783, 0.22);
+    color: #ffb783;
+}
+
+#custom-weather.clear {
+    color: #c8ca94;
+}
+
+#custom-weather.partly,
+#custom-weather.cloudy,
+#custom-weather.overcast {
+    color: #ffb783;
+}
+
+#custom-weather.drizzle,
+#custom-weather.rain,
+#custom-weather.heavy {
+    color: #e4bfa7;
+}
+
+#custom-weather.snow,
+#custom-weather.sleet {
+    color: #5b412f;
+}
+
+#custom-weather.thunder {
+    color: #6d390b;
+}
+
+#custom-weather.fog,
+#custom-weather.wind {
+    color: #d6c3b7;
+}
+
+#custom-weather.error {
+    color: #ffb4ab;
+}
+
+#custom-weather:hover {
+    color: #4f2500;
+    background: #ffb783;
 }
 
 /* Кнопка меню приложений и кнопка питания: при наведении заливаются акцентом */

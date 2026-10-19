@@ -115,10 +115,16 @@ bindgesture swipe:4:down move scratchpad
     # запасной вариант — wofi (тема та же, что у панелей)
     bindsym --to-code $mod+Shift+a exec wofi --show drun
 
-    # Панели quickshell: настройки дотфайлов, эмодзи, поиск
+    # Панели quickshell: настройки дотфайлов, эмодзи, поиск, календарь
     bindsym --to-code $mod+comma exec qs ipc call panel toggle settings
     bindsym --to-code $mod+period exec sh -c 'python3 $HOME/.config/quickshell/scripts/emoji-anchor.py; qs ipc call panel toggle emoji'
     bindsym --to-code $mod+space exec qs ipc call panel toggle search
+    # календарь с погодой и таймером (то же, что клик по часам в баре)
+    bindsym --to-code $mod+c exec qs ipc call panel toggle calendar
+
+    # Сайдбар: буфер обмена, снимки экрана, кнопки сессии
+    bindsym --to-code $mod+d exec qs ipc call sidebar toggle
+    bindsym --to-code $mod+grave exec qs ipc call sidebar toggle
 
     # Обои: панель выбора и случайные обои
     bindsym --to-code $mod+Shift+w exec qs ipc call panel toggle wallpaper
@@ -231,9 +237,15 @@ bindgesture swipe:4:down move scratchpad
 
 # ── скриншоты ───────────────────────────────────────────────────────────────
 
-    # Print — весь экран в ~/Pictures, $mod+Shift+s — область в буфер
-    bindsym --to-code Print exec sh -c 'grim "$HOME/Pictures/$(date +%Y-%m-%d_%H-%M-%S).png"'
-    bindsym --to-code $mod+Shift+s exec sh -c 'grim -g "$(slurp)" - | wl-copy'
+    # Снимки складывает scripts/shot.py: в ~/Pictures/Screenshots, сразу в буфер
+    # и с уведомлением. Те же кнопки есть плитками в сайдбаре (Mod+D).
+    #   Print — весь экран      Shift+Print — область        Mod+Print — окно
+    #   Ctrl+Print — весь экран через 3 секунды               Mod+Shift+S — область
+    bindsym --to-code Print exec python3 $HOME/.config/quickshell/scripts/shot.py full
+    bindsym --to-code Shift+Print exec python3 $HOME/.config/quickshell/scripts/shot.py region
+    bindsym --to-code $mod+Print exec python3 $HOME/.config/quickshell/scripts/shot.py window
+    bindsym --to-code Ctrl+Print exec python3 $HOME/.config/quickshell/scripts/shot.py full 3
+    bindsym --to-code $mod+Shift+s exec python3 $HOME/.config/quickshell/scripts/shot.py region
 
 # ── режим изменения размера (Mod+R) ─────────────────────────────────────────
 

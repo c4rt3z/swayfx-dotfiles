@@ -1,7 +1,9 @@
 // Панели quickshell для кнопок waybar.
 // Управление:  qs ipc call panel toggle <имя>
 // Имена панелей: volume | brightness | network | memory | battery | wallpaper
-//                 | launcher | power | music | settings | emoji
+//                 | launcher | power | music | settings | emoji | search
+//                 | calendar
+// Сайдбар (буфер обмена, снимки, сессия): qs ipc call sidebar toggle  (Mod+B)
 // Лаунчер (замена wofi) открывается на Mod+A: qs ipc call panel open launcher
 // Блокировка экрана: qs ipc call lock lock|unlock   (Mod+Ctrl+L, см. lock/LockScreen.qml)
 // Меню сессии: qs ipc call panel open power        (кнопка питания в углу waybar)
@@ -17,11 +19,15 @@ import "panels"
 import "singletons"
 import "lock"
 import "wallpaper"
+import "sidebar"
 
 ShellRoot {
     id: root
 
     property string activePanel: ""
+    // раздел настроек: открывается и обычным Mod+, и по ссылке
+    // qs ipc call settings open weather
+    property string settingsSection: "home"
 
     // Где курсор. sway его не отдаёт, поэтому «ловим» сами: панель эмодзи —
     // это прозрачная поверхность во весь экран, и композитор, как только она
@@ -96,6 +102,85 @@ ShellRoot {
         }
     }
 
+    // Таймер: им же удобно заводить отсчёт с бинда
+    //   qs ipc call timer start 1500   (секунды)
+    IpcHandler {
+        target: "timer"
+
+        function start(seconds: int): void {
+            Countdown.start(seconds, Lang.t("Таймер"), Lang.t("Время вышло"));
+        }
+        function pause(): void {
+            Countdown.pause();
+        }
+        function resume(): void {
+            Countdown.resume();
+        }
+        function stop(): void {
+            Countdown.stop();
+        }
+        function left(): string {
+            return Countdown.clock;
+        }
+        function ping(): string {
+            return "ok";
+        }
+    }
+
+    // Сайдбар (Mod+B): своя поверхность слева, поэтому отдельный обработчик, а
+    // не имя среди панелей.
+    IpcHandler {
+        target: "sidebar"
+
+        function toggle(): void {
+            Sidebar.toggle();
+        }
+        function open(): void {
+            Sidebar.show();
+        }
+        function close(): void {
+            Sidebar.hide();
+        }
+        function ping(): string {
+            return "ok";
+        }
+    }
+
+    // Ссылка на раздел настроек (deep-link):
+    //   qs ipc call settings open weather
+    // Разделы: home, appearance, language, apps, bar, weather, keys, languages,
+    //          defaults, services
+    IpcHandler {
+        target: "settings"
+
+        function open(section: string): void {
+            root.settingsSection = section;
+            root.activePanel = "settings";
+        }
+        function ping(): string {
+            return root.settingsSection;
+        }
+    }
+
+    // История буфера обмена. Отдельного пакета не требуем: wl-paste сам зовёт
+    // наш скрипт на каждое новое выделение (текст или картинку), тот кладёт
+    // элемент в ~/.cache/quickshell/clipboard/.
+    Process {
+        command: ["sh", "-c",
+            "command -v wl-paste >/dev/null 2>&1 && exec wl-paste --watch python3 "
+            + (Quickshell.env("HOME") ?? "") + "/.config/quickshell/scripts/clipboard.py store"]
+        running: true
+    }
+
+    // Сайдбар не должен висеть поверх замка
+    Connections {
+        target: Lock
+        function onLockedChanged() {
+            if (Lock.locked)
+                Sidebar.hide();
+        }
+    }
+
     // Экран блокировки: quickshell держит его поверх всего (ext-session-lock).
     // Рисует lock/LockScreen.qml, цвета — из палитры темы.
     // WlSessionLockSurface — обязательный дочерний элемент: именно он создаёт
@@ -130,6 +215,7 @@ ShellRoot {
                                          || root.activePanel === "music"
                                          || root.activePanel === "settings"
                                          || root.activePanel === "search"
+                                         || root.activePanel === "calendar"
         // эмодзи: поверхность во весь экран, карточка внутри — у курсора
         readonly property bool overlay: root.activePanel === "emoji"
         // настройки: центр по обеим осям
@@ -189,7 +275,8 @@ ShellRoot {
                                              : (root.activePanel === "launcher" ? 620
                                              : (root.activePanel === "music" ? 880
                                              : (root.activePanel === "emoji" ? 470
-                                             : (root.activePanel === "search" ? 680 : 380)))))
+                                             : (root.activePanel === "search" ? 680
+                                             : (root.activePanel === "calendar" ? 420 : 380))))))
         implicitWidth: win.overlay ? win.screenWidth : win.contentWidth
         // у эмодзи поверхность во весь экран: только так композитор скажет,
         // где курсор
@@ -208,6 +295,7 @@ ShellRoot {
             if (n === "settings") return Lang.t("Настройки");
             if (n === "emoji") return Lang.t("Эмодзи");
             if (n === "search") return Lang.t("Поиск");
+            if (n === "calendar") return Lang.t("Календарь и таймер");
             return "";
         }
 
@@ -337,6 +425,9 @@ ShellRoot {
                     id: loader
                     Layout.fillWidth: true
                     Layout.preferredHeight: item ? item.implicitHeight : 0
+                    // раздел из ссылки (qs ipc call settings open weather)
+                    onItemChanged: if (item && item.section !== undefined)
+                                       item.section = root.settingsSection
                     sourceComponent: {
                         if (root.activePanel === "volume") return volumeComp;
                         if (root.activePanel === "brightness") return brightComp;
@@ -350,6 +441,7 @@ ShellRoot {
                         if (root.activePanel === "settings") return settingsComp;
                         if (root.activePanel === "emoji") return emojiComp;
                         if (root.activePanel === "search") return searchComp;
+                        if (root.activePanel === "calendar") return calendarComp;
                         return null;
                     }
                 }
@@ -366,10 +458,14 @@ ShellRoot {
                 Component { id: settingsComp; SettingsPanel {} }
                 Component { id: emojiComp; EmojiPanel {} }
                 Component { id: searchComp; SearchPanel {} }
+                Component { id: calendarComp; CalendarPanel {} }
             }
         }
     }
 
     // Обои: рисуются на слое Background вместо swaybg
     WallpaperEngine {}
+
+    // Сайдбар: своя поверхность слева, открывается по Mod+B (qs ipc call sidebar toggle)
+    Sidebar {}
 }

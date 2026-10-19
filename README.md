@@ -25,6 +25,7 @@ Material You rebuilds the whole palette from every wallpaper, and animated GIF w
 │   │                 settings (10 sections: look, language, apps, bar, keys, layouts…)
 │   ├── scripts/      python helpers: search engine, app/bind/layout indexes, theming
 │   ├── i18n/         interface languages: ru (source), en, uk, de
+│   ├── sidebar/      sidebar: clipboard, screenshots, session tiles
 │   ├── lock/         lock screen (replaces swaylock)
 │   └── docs/         screenshots
 ├── waybar/         bar config + scripts (window title, clock, media center, layout)
@@ -50,7 +51,8 @@ Material You rebuilds the whole palette from every wallpaper, and animated GIF w
 * `waybar`, `quickshell` (0.3.2+), `python3` with **Pillow**, `jq`
 * **JetBrainsMono Nerd Font** — the only font used
 * terminals: `alacritty` and/or `kitty`
-* helpers the config calls: `wofi`, `grim`, `slurp`, `wl-clipboard`, `brightnessctl`,
+* helpers the config calls: `wofi`, `grim`, `slurp`, `wl-clipboard`, `tesseract` (optional —
+  text recognition for screenshots), `brightnessctl`,
   `playerctl`, `wireplumber` (wpctl), `xdg-utils` (xdg-mime), `matugen`, `ffmpeg`,
   `gsettings` (glib2), `swayidle`, `swaylock-effects` (fallback lock)
 * `plasma-apply-colorscheme` (plasma-workspace) — only to recolor KDE apps
@@ -187,6 +189,37 @@ Russian). Shipped: `en`, `uk`, `de`. To add one: drop `<code>.json` next to them
 and register the code in `singletons/Lang.qml` and in `waybar/scripts/waybar-lang.py`
 (that one translates the bar's own module texts). Switching is instant, no restart.
 
+## Sidebar, weather and calendar
+
+`Super+D` (or `Super+\``) opens the **sidebar** — a panel one quarter of the
+screen wide. It has three blocks:
+
+* **session** — tiles two per row: lock, switch user, suspend, log out, reboot
+  and power off. Dangerous actions ask for a second click;
+* **screenshots** — four buttons (region, window, whole screen, in three
+  seconds) and a strip of recent shots: copy, recognise text, open, delete;
+* **clipboard** — history of text and images. No extra package needed:
+  `wl-paste --watch` feeds `quickshell/scripts/clipboard.py`, which keeps the
+  history. A copied screenshot lands here too.
+
+Shots go to `~/Pictures/Screenshots`, are copied to the clipboard right away and
+shown in a notification. Text recognition needs `tesseract` (optional; for
+Russian also `tesseract-data-rus`).
+
+**Weather** — the leftmost module after the logo: a font icon (Nerd Font, not an
+emoji) and the temperature. The source is set in `Super+,` → “Weather”:
+open-meteo needs no key and no signup, an OpenWeather key switches to their
+data. The city is searched there too, units are °C/°F.
+
+**Calendar and timer** — click the clock in the bar (or `Super+C`): a month with
+today highlighted, the weather and a timer with presets from 1 to 45 minutes.
+The countdown lives in the shell, so the panel can be closed — a notification
+arrives at zero.
+
+**Deep links to settings**: `qs ipc call settings open weather` opens the
+settings right on that section (home, appearance, language, apps, bar, weather,
+keys, languages, defaults, services).
+
 ## Key bindings
 
 `Mod` is <kbd>Super</kbd>. The full list, as it sits in `sway/config`:
@@ -228,8 +261,11 @@ and register the code in `singletons/Lang.qml` and in `waybar/scripts/waybar-lan
 
 | Shortcut | Command |
 | --- | --- |
-| `Screenshot` | `exec sh -c 'grim "$HOME/Pictures/$(date +%Y-%m-%d_%H-%M-%S).png"'` |
-| `Super+Shift+S` | `exec sh -c 'grim -g "$(slurp)" - \| wl-copy'` |
+| `Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py full` |
+| `Shift+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py region` |
+| `Super+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py window` |
+| `Ctrl+Print` | `exec python3 $HOME/.config/quickshell/scripts/shot.py full 3` |
+| `Super+Shift+S` | `exec python3 $HOME/.config/quickshell/scripts/shot.py region` |
 
 **Window**
 
@@ -336,6 +372,9 @@ and register the code in `singletons/Lang.qml` and in `waybar/scripts/waybar-lan
 | `Super+-` | `scratchpad show` |
 | `Super+A` | `exec qs ipc call panel open launcher` |
 | `Super+B` | `exec firefox` |
+| `Super+C` | `exec qs ipc call panel toggle calendar` |
+| `Super+D` | `exec qs ipc call sidebar toggle` |
+| ``Super+` `` | `exec qs ipc call sidebar toggle` |
 | `Super+Ctrl+L` | `exec qs ipc call lock lock` |
 | `Super+Ctrl+W` | `exec ~/.config/wallpaper/wallpaper.sh random` |
 | `Super+E` | `exec dolphin` |
