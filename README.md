@@ -240,7 +240,8 @@ opens the player. Then come the blocks:
   seconds) and a strip of recent shots: copy, recognise text, open, delete;
 * **clipboard** — history of text and images. No extra package needed:
   `wl-paste --watch` feeds `quickshell/scripts/clipboard.py`, which keeps the
-  history. A copied screenshot lands here too.
+  history. A copied screenshot lands here too. The cross next to an entry removes
+  it from the history, “clear” removes them all.
 
 Shots go to `~/Pictures/Screenshots`, are copied to the clipboard right away and
 shown in a notification. Text recognition needs `tesseract` (optional; for

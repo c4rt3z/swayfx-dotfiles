@@ -180,16 +180,19 @@ PanelWindow {
 
     function copyClip(id) {
         clipAction.command = ["python3", clipScript, "copy", id];
+        clipAction.running = false;
         clipAction.running = true;
     }
 
     function removeClip(id) {
         clipAction.command = ["python3", clipScript, "remove", id];
+        clipAction.running = false;
         clipAction.running = true;
     }
 
     function clearClips() {
         clipAction.command = ["python3", clipScript, "clear"];
+        clipAction.running = false;
         clipAction.running = true;
     }
 
@@ -811,6 +814,8 @@ PanelWindow {
 
                                     Label {
                                         Layout.fillWidth: true
+                                        // место под крестик справа
+                                        Layout.rightMargin: 20
                                         text: modelData.kind === "image"
                                               ? Lang.t("Картинка") + " · " + Math.round(modelData.size / 1024)
                                                 + " " + Lang.t("КБ")
@@ -819,29 +824,38 @@ PanelWindow {
                                         font.pixelSize: 11
                                         elide: Text.ElideRight
                                     }
-
-                                    Label {
-                                        text: "\u00d7"
-                                        color: clipRemove.containsMouse ? Colors.red : Colors.dim
-                                        font.pixelSize: 13
-
-                                        MouseArea {
-                                            id: clipRemove
-                                            anchors.fill: parent
-                                            anchors.margins: -4
-                                            hoverEnabled: true
-                                            onClicked: side.removeClip(clipRow.modelData.id)
-                                        }
-                                    }
                                 }
 
                                 MouseArea {
                                     id: clipHover
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    // клик по тексту копирует, по крестику — удаляет:
-                                    // крестик лежит выше и забирает клик себе
+                                    // клик по тексту копирует
                                     onClicked: side.copyClip(clipRow.modelData.id)
+                                }
+
+                                // Крестик — отдельной областью поверх строки. Если
+                                // держать его внутри RowLayout, клик забирает
+                                // общая MouseArea строки: она объявлена позже и
+                                // лежит сверху, поэтому крестик «копировал» бы
+                                // вместо удаления.
+                                Label {
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 7
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "\u00d7"
+                                    color: clipRemove.containsMouse ? Colors.red : Colors.dim
+                                    font.pixelSize: 14
+                                    z: 2
+
+                                    MouseArea {
+                                        id: clipRemove
+                                        anchors.fill: parent
+                                        anchors.margins: -5
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: side.removeClip(clipRow.modelData.id)
+                                    }
                                 }
                             }
                         }
