@@ -191,6 +191,9 @@ ColumnLayout {
         color: Colors.dim
     }
 
+    // Кнопки вида бара крупные: в каждой — миниатюра, как полоса будет
+    // выглядеть. Миниатюра учитывает и вид (сплошная, островок, без
+    // подложки), и положение: полоска снизу, если бар внизу.
     RowLayout {
         Layout.fillWidth: true
         spacing: 8
@@ -204,24 +207,86 @@ ColumnLayout {
                 required property var modelData
 
                 Layout.fillWidth: true
-                implicitHeight: 32
+                implicitHeight: 78
 
                 readonly property bool current: page.mode === modelData.key
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 7
+                    radius: 9
                     color: modeRow.current ? Colors.selected : "transparent"
                     border.width: 1
                     border.color: modeRow.current ? Colors.accent
                                 : (modeHover.containsMouse ? Colors.border : Colors.divider)
                 }
 
+                // ── миниатюра полосы ───────────────────────────────────
+                Item {
+                    id: miniArea
+
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 8
+                    height: 38
+
+                    // «экран» под миниатюрой
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 4
+                        color: Qt.alpha(Colors.bg, 0.35)
+                        border.width: 1
+                        border.color: Colors.divider
+                    }
+
+                    Rectangle {
+                        id: miniBar
+
+                        // плавающий — короткий островок с полями по бокам,
+                        // остальные — во всю ширину
+                        width: modeRow.modelData.key === "floating"
+                               ? parent.width * 0.74
+                               : parent.width
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        // сверху или снизу — как положение бара
+                        y: page.position === "bottom"
+                           ? parent.height - height - 3
+                           : 3
+                        height: 15
+                        radius: modeRow.modelData.key === "floating" ? 8 : 0
+                        color: modeRow.modelData.key === "minimal"
+                               ? "transparent" : Colors.accent
+                        border.width: modeRow.modelData.key === "minimal" ? 1 : 0
+                        border.color: Qt.alpha(Colors.accent, 0.55)
+
+                        // модули: точки-разделители
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 5
+                            anchors.rightMargin: 5
+                            spacing: 5
+
+                            Repeater {
+                                model: 5
+                                delegate: Rectangle {
+                                    width: 7
+                                    height: 3
+                                    radius: 1
+                                    color: Qt.alpha(Colors.bg, 0.6)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Label {
-                    anchors.centerIn: parent
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 8
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: modeRow.modelData.name
                     color: modeRow.current ? Colors.text : Colors.muted
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                 }
 
                 MouseArea {

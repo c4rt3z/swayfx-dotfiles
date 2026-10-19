@@ -21,19 +21,47 @@ ColumnLayout {
     readonly property real pageMaxHeight: Math.round(
         (Quickshell.screens.length > 0 ? Quickshell.screens[0].height : 1200) * 0.80)
 
+    // keys — слова, по которым раздел находится поиском: «шрифт» ведёт в
+    // «Внешний вид», «эквалайзер» — в «Звук» и так далее
     readonly property var sections: [
-        { key: "home", name: Lang.t("Главная"), glyph: "\uf015", ready: true },
-        { key: "appearance", name: Lang.t("Внешний вид"), glyph: "\uf1fc", ready: true },
-        { key: "language", name: Lang.t("Язык"), glyph: "\uf1ab", ready: true },
-        { key: "apps", name: Lang.t("Приложения"), glyph: "\uf108", ready: true },
-        { key: "bar", name: Lang.t("Панель"), glyph: "\uf0c9", ready: true },
-        { key: "sidebar", name: Lang.t("Сайдбар"), glyph: "\uf0db", ready: true },
-        { key: "weather", name: Lang.t("Погода"), glyph: "\uf185", ready: true },
-        { key: "keys", name: Lang.t("Клавиши"), glyph: "\uf11c", ready: true },
-        { key: "languages", name: Lang.t("Раскладки"), glyph: "\uf0ac", ready: true },
-        { key: "defaults", name: Lang.t("Приложения по умолчанию"), glyph: "\uf0ad", ready: true },
-        { key: "services", name: Lang.t("Службы"), glyph: "\uf085", ready: true }
+        { key: "home", name: Lang.t("Главная"), glyph: "\uf015", ready: true,
+          keys: "главная обзор сводка система about" },
+        { key: "appearance", name: Lang.t("Внешний вид"), glyph: "\uf1fc", ready: true,
+          keys: "внешний вид обои тема цвет светлая тёмная шрифт шрифты matugen фон" },
+        { key: "language", name: Lang.t("Язык"), glyph: "\uf1ab", ready: true,
+          keys: "язык интерфейс регион перевод" },
+        { key: "apps", name: Lang.t("Приложения"), glyph: "\uf108", ready: true,
+          keys: "приложения тема gtk qt kde программы" },
+        { key: "bar", name: Lang.t("Панель"), glyph: "\uf0c9", ready: true,
+          keys: "панель waybar полоса модули вид размытие верх низ" },
+        { key: "sidebar", name: Lang.t("Сайдбар"), glyph: "\uf0db", ready: true,
+          keys: "сайдбар виджеты буфер снимки сессия погода трек" },
+        { key: "weather", name: Lang.t("Погода"), glyph: "\uf185", ready: true,
+          keys: "погода город прогноз ветер температура" },
+        { key: "sound", name: Lang.t("Звук"), glyph: "\uf028", ready: true,
+          keys: "звук громкость эквалайзер пресеты easyeffects колонки" },
+        { key: "keys", name: Lang.t("Клавиши"), glyph: "\uf11c", ready: true,
+          keys: "клавиши бинды сочетания горячие перебинд" },
+        { key: "languages", name: Lang.t("Раскладки"), glyph: "\uf0ac", ready: true,
+          keys: "раскладки клавиатура xkb раскладка" },
+        { key: "defaults", name: Lang.t("Приложения по умолчанию"), glyph: "\uf0ad", ready: true,
+          keys: "приложения по умолчанию браузер терминал почта pdf" },
+        { key: "services", name: Lang.t("Службы"), glyph: "\uf085", ready: true,
+          keys: "службы перезапуск quickshell waybar swayidle playerctld" }
     ]
+
+    // поиск по настройкам: по названию раздела и по словам
+    property string query: ""
+    readonly property var shownSections: {
+        const q = query.trim().toLowerCase();
+        if (q === "")
+            return panel.sections;
+        return panel.sections.filter(s => {
+            const name = String(s.name || "").toLowerCase();
+            const keys = String(s.keys || "").toLowerCase();
+            return name.indexOf(q) >= 0 || keys.indexOf(q) >= 0;
+        });
+    }
 
     spacing: 0
 
@@ -52,8 +80,21 @@ ColumnLayout {
             Layout.preferredWidth: 210
             spacing: 2
 
+            // Поиск по настройкам: фильтрует разделы, Enter открывает первый
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                Layout.bottomMargin: 8
+                placeholder: Lang.t("Поиск по настройкам")
+                onEdited: value => panel.query = value
+                onAccepted: {
+                    if (panel.shownSections.length > 0)
+                        panel.section = panel.shownSections[0].key;
+                }
+            }
+
             Repeater {
-                model: panel.sections
+                model: panel.shownSections
 
                 delegate: Item {
                     id: entry
@@ -120,6 +161,15 @@ ColumnLayout {
                     }
                 }
             }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: panel.query.trim() !== "" && panel.shownSections.length === 0
+            text: Lang.t("Ничего не найдено")
+            color: Colors.dim
+            font.pixelSize: 11
+            wrapMode: Text.WordWrap
         }
 
         Rectangle {

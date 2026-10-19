@@ -90,6 +90,19 @@ def reload_waybar():
 CSS = f"{HOME}/.config/waybar/style.css"
 
 
+def bar_background():
+    """Фон полосы: цвет темы с прозрачностью, как у терминала (0.75)."""
+    try:
+        with open(f"{HOME}/.cache/wallpaper/theme/colors.json", encoding="utf-8") as fh:
+            data = json.load(fh)
+        bg = str(data.get("bg") or "").strip()
+        if bg.startswith("#"):
+            return f"alpha({bg}, 0.75)"
+    except Exception:
+        pass
+    return "alpha(#1d2024, 0.75)"
+
+
 def patch_css(mode):
     """Поправить вид бара прямо в style.css.
 
@@ -106,10 +119,12 @@ def patch_css(mode):
     if not block:
         return False
     body = block.group(2)
-    color = re.search(r"background:\s*([^;]+);", body)
-    color = color.group(1).strip() if color else "alpha(#000000, 0.75)"
     if mode == "minimal":
         color = "transparent"
+    else:
+        # цвет берём из палитры, а не из текущего CSS: в режиме «без фона» там
+        # transparent, и возвращать было бы нечего
+        color = bar_background()
     radius = "14px" if mode == "floating" else "0"
     if re.search(r"background:[^;]+;", body):
         body = re.sub(r"background:[^;]+;", f"background: {color};", body, count=1)

@@ -153,7 +153,9 @@ cursor: parallax runs while the pointer is over the desktop.
 
 **Blur.** The waybar and quickshell panels blur what is behind them (`layer_effects`
 blocks in `~/.config/sway/config`, toggled in “Bar” → “Blur”), and so do the
-notification toasts. The lock screen is a session surface rather than a layer, so
+notification toasts. The bar’s blur follows its shape instead of covering a
+rectangle: the `layer_effects "waybar"` block has `blur_ignore_transparent`, so
+a rounded island blurs exactly its own area. The lock screen is a session surface rather than a layer, so
 the shell blurs its wallpaper itself (in QML), animated GIFs and video included;
 under the clock it shows the battery charge and the track that is playing.
 
@@ -164,7 +166,10 @@ wallpaper gives light applications and a dark one gives dark applications. The
 
 ## Settings (`Super+,`)
 
-One quickshell window, twelve sections — everything writes straight into the configs:
+One quickshell window, twelve sections — everything writes straight into the
+configs. Above the section list there is a search: it matches names and meaning
+(“шрифт” → “Appearance”, “эквалайзер” → “Sound”, “буфер” → “Sidebar”); Enter
+opens the first match.
 
 | Section | What it does |
 | --- | --- |
@@ -299,7 +304,8 @@ example `github.com/M0Rf30/easyeffects-presets`). All of it is done by
 
 **The bar (waybar)** is configured in the same place, under “Bar”: modules and
 their zones, position (top or bottom), look — solid, a rounded floating island,
-or no background at all — and blur. The look is stored in `~/.config/waybar/mode`,
+or no background at all — and blur. The look buttons carry a miniature: you can
+see how the bar will look and where it will sit when the bar is at the bottom. The look is stored in `~/.config/waybar/mode`,
 the position and margins in `~/.config/waybar/config`; the quickshell panels and
 the sidebar keep to the same side as the bar. In floating mode the island is
 rounded at both ends, and the edge modules are rounded with it, so a hovered
