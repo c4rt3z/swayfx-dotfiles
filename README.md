@@ -238,7 +238,9 @@ a notification arrives at zero.
 
 **Battery** (click the charge icon in the bar) — percentage, time to full or
 empty, and an “Auto-lock when idle” switch: it turns off the five-minute idle
-screen lock without touching the lock before sleep.
+screen lock without touching the lock before sleep. It applies right away
+(`quickshell/scripts/autolock.sh` restarts `swayidle` if it was still running
+the command from an older config).
 
 **Fonts** — `Super+,` → “Appearance”, below the “Fonts” rule. The list comes
 from fontconfig (searchable, each name drawn in its own face); you can set one

@@ -14,7 +14,9 @@ ColumnLayout {
     // автоблокировка по простою: включена, пока нет файла-флага
     property bool autoLock: true
 
-    readonly property string lockFlag: (Quickshell.env("HOME") ?? "") + "/.config/quickshell/no-auto-lock"
+    readonly property string home: Quickshell.env("HOME") ?? ""
+    readonly property string lockFlag: home + "/.config/quickshell/no-auto-lock"
+
 
     spacing: 9
 
@@ -156,9 +158,12 @@ ColumnLayout {
         onFileChanged: reload()
     }
 
+    // Тумблер: скрипт ставит/снимает флаг и, если swayidle ещё держит старую
+    // команду из конфига, перезапускает его — иначе переключатель начинал бы
+    // работать только после перезахода в сеанс.
     Process {
         id: lockToggle
-        command: ["sh", "-c", "if [ -e \"$0\" ]; then rm -f \"$0\"; else touch \"$0\"; fi", p.lockFlag]
+        command: ["sh", p.home + "/.config/quickshell/scripts/autolock.sh", "toggle"]
         onExited: lockFlagView.reload()
     }
 }
