@@ -3,4 +3,4 @@
 # Центр теперь занят только музыкой, поэтому открываем и на паузе: в панели
 # видно трек, обложку, текст и можно продолжить воспроизведение.
 [ -n "$(playerctl status 2>/dev/null)" ] || exit 0
-exec qs ipc call panel open music
+exec qs ipc call panel bar music

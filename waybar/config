@@ -33,14 +33,14 @@
     "exec": "~/.config/waybar/scripts/clock.sh",
     "interval": 10,
     "tooltip": false,
-    "on-click": "qs ipc call panel toggle calendar"
+    "on-click": "qs ipc call panel bar calendar"
   },
   "custom/weather": {
     "exec": "python3 ~/.config/quickshell/scripts/weather.py bar",
     "interval": 900,
     "return-type": "json",
     "tooltip": true,
-    "on-click": "qs ipc call panel toggle weather"
+    "on-click": "qs ipc call panel bar weather"
   },
   "sway/workspaces": {
     "disable-scroll": true,
@@ -61,12 +61,12 @@
     "format-ethernet": "󰈀  {ipaddr}",
     "format-disconnected": "󰖪  нет сети",
     "tooltip-format": "{ifname} via {gwaddr}",
-    "on-click": "qs ipc call panel toggle network"
+    "on-click": "qs ipc call panel bar network"
   },
   "memory": {
     "format": "󰍛 {used:0.2f}GB",
     "interval": 3,
-    "on-click": "qs ipc call panel toggle memory"
+    "on-click": "qs ipc call panel bar memory"
   },
   "battery": {
     "states": {
@@ -84,7 +84,7 @@
       "󰂂",
       "󰁹"
     ],
-    "on-click": "qs ipc call panel toggle battery"
+    "on-click": "qs ipc call panel bar battery"
   },
   "backlight": {
     "device": "amdgpu_bl1",
@@ -96,7 +96,7 @@
     ],
     "on-scroll-up": "brightnessctl set +1% && pkill -SIGRTMIN+2 waybar",
     "on-scroll-down": "brightnessctl set 1%- && pkill -SIGRTMIN+2 waybar",
-    "on-click": "qs ipc call panel toggle brightness"
+    "on-click": "qs ipc call panel bar brightness"
   },
   "pulseaudio": {
     "format": "{icon} {volume}%",
@@ -111,7 +111,7 @@
     },
     "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +1%",
     "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -1%",
-    "on-click": "qs ipc call panel toggle volume",
+    "on-click": "qs ipc call panel bar volume",
     "on-click-right": "pavucontrol"
   },
   "sway/language": {
@@ -133,6 +133,6 @@
     "exec": "~/.config/waybar/scripts/power-icon.sh",
     "interval": 60,
     "tooltip": false,
-    "on-click": "qs ipc call panel open power"
+    "on-click": "qs ipc call panel bar power"
   }
 }

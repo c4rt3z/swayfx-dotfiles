@@ -44,11 +44,29 @@ ShellRoot {
     property real pointerX: 0
     property real pointerY: 0
 
+    // Виджет открыли кнопкой waybar: карточка должна встать не к правому краю
+    // экрана, а по центру этой кнопки. Центр кнопки — там, где был курсор в
+    // момент щелчка, поэтому позицию ловим тем же способом, что и у эмодзи
+    // (полноэкранная прозрачная поверхность), только карточку ставим по центру
+    // курсора и сразу под баром.
+    property bool panelFromBar: false
+
     onActivePanelChanged: {
-        if (activePanel === "emoji") {
+        if (activePanel === "emoji" || root.panelFromBar) {
             root.pointerKnown = false;
             root.pointerHit = false;
         }
+        if (activePanel === "")
+            root.panelFromBar = false;
+    }
+
+    Timer {
+        id: nudgeCursor
+        interval: 90
+        repeat: false
+        onTriggered: Quickshell.execDetached(["sh", "-c",
+            "swaymsg 'seat - cursor move 1 0' >/dev/null 2>&1; " +
+            "sleep 0.12; swaymsg 'seat - cursor move -1 0' >/dev/null 2>&1"])
     }
 
     // Куда ставить выбор эмодзи, если позиция курсора неизвестна: прямоугольник
@@ -75,12 +93,25 @@ ShellRoot {
         target: "panel"
 
         function toggle(name: string): void {
+            root.panelFromBar = false;
             root.activePanel = (root.activePanel === name) ? "" : name;
         }
         function open(name: string): void {
+            root.panelFromBar = false;
             root.activePanel = name;
         }
+        // виджет бара: qs ipc call panel bar volume — встанет под своей кнопкой
+        function bar(name: string): void {
+            root.panelFromBar = true;
+            root.activePanel = name;
+            // sway не шлёт pointer-enter новой поверхности, пока мышь не
+            // двинется, а после щелчка по бару она стоит. Сдвигаем курсор на
+            // пиксель и возвращаем: полноэкранная поверхность получает
+            // координаты, карточка встаёт по центру кнопки.
+            nudgeCursor.restart();
+        }
         function close(): void {
+            root.panelFromBar = false;
             root.activePanel = "";
         }
         // проверка связи: qs ipc call panel ping
@@ -219,8 +250,13 @@ ShellRoot {
                                          || root.activePanel === "calendar"
                                          || root.activePanel === "weather"
                                          || root.activePanel === "switcher"
-        // эмодзи: поверхность во весь экран, карточка внутри — у курсора
-        readonly property bool overlay: root.activePanel === "emoji"
+        // эмодзи и виджеты бара: поверхность во весь экран, карточка внутри —
+        // у курсора (у эмодзи справа снизу от него, у виджетов — по центру)
+        readonly property bool overlay: root.activePanel !== ""
+                                        && (root.activePanel === "emoji"
+                                            || root.panelFromBar)
+        // виджет открыт кнопкой бара: карточка встаёт по центру кнопки
+        readonly property bool barAnchor: win.overlay && root.activePanel !== "emoji"
         // настройки: центр по обеим осям
         readonly property bool centering: root.activePanel === "settings"
 
@@ -349,8 +385,10 @@ ShellRoot {
             onTriggered: {
                 if (root.pointerHit)
                     return;
-                root.pointerX = win.screenWidth - win.anchorRight;
-                root.pointerY = win.screenHeight - win.anchorBottom;
+                root.pointerX = win.barAnchor ? win.screenWidth / 2
+                                              : win.screenWidth - win.anchorRight;
+                root.pointerY = win.barAnchor ? 44
+                                              : win.screenHeight - win.anchorBottom;
                 root.pointerKnown = true;
             }
         }
@@ -363,11 +401,21 @@ ShellRoot {
 
             width: chrome.floating ? win.contentWidth : win.width
             height: chrome.floating ? body.implicitHeight + 24 : win.height
+            // виджет бара — по центру своей кнопки, эмодзи — справа снизу от
+            // курсора
             x: chrome.floating
-               ? Math.max(8, Math.min(root.pointerX + 18, win.screenWidth - chrome.width - 8))
+               ? (win.barAnchor
+                  ? Math.max(8, Math.min(root.pointerX - chrome.width / 2,
+                                         win.screenWidth - chrome.width - 8))
+                  : Math.max(8, Math.min(root.pointerX + 18,
+                                         win.screenWidth - chrome.width - 8)))
                : 0
             y: chrome.floating
-               ? Math.max(8, Math.min(root.pointerY + 18, win.screenHeight - chrome.height - 8))
+               ? (win.barAnchor
+                  ? Math.max(8, Math.min(root.pointerY + 2,
+                                         win.screenHeight - chrome.height - 8))
+                  : Math.max(8, Math.min(root.pointerY + 18,
+                                         win.screenHeight - chrome.height - 8)))
                : 0
             // пока курсор не пойман, карточку не показываем: иначе она мигнёт
             // в левом верхнем углу

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtMultimedia
 import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pam
@@ -194,6 +195,19 @@ Item {
                 }
             }
         }
+    }
+
+    // Блюр. Экран блокировки — поверхность сессии (ext-session-lock), а не
+    // layer-shell, поэтому layer_effects из sway к ней не применяется:
+    // размываем сами. Так под замком не видно деталей обоев, и рабочий стол
+    // не мелькает между кадром гифки и её размытием.
+    MultiEffect {
+        anchors.fill: parent
+        source: bgWrap
+        blurEnabled: true
+        blur: 0.9
+        blurMax: 48
+        saturation: -0.12
     }
 
     // затемнение и виньетка: текст читается на любых обоях

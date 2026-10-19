@@ -310,6 +310,13 @@ layer_effects "qs-panel" {
     blur_ignore_transparent enable
 }
 
+# Тосты уведомлений quickshell: поверхность маленькая (только стопка карточек),
+# но между карточками есть прозрачные промежутки — их не размываем.
+layer_effects "qs-toast" {
+    blur enable
+    blur_ignore_transparent enable
+}
+
 #
 # Status Bar:
 #
