@@ -250,7 +250,11 @@ ShellRoot {
 
                     if (win.isGif(p)) {
                         win.pendingSource = p;
-                        gifProc.command = ["bash", engineRoot.gifScript, p];
+                        // размер экрана — чтобы гифку один раз масштабировали под него
+                        // (lanczos), а не растягивали на видеокарте
+                        gifProc.command = ["bash", engineRoot.gifScript, p,
+                                           String(Math.round(win.width * win.pxScale)),
+                                           String(Math.round(win.height * win.pxScale))];
                         gifProc.running = true;
                         return;
                     }

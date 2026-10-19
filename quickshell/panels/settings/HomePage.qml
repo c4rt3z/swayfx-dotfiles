@@ -120,7 +120,7 @@ ColumnLayout {
 
             Label {
                 Layout.preferredWidth: 118
-                text: modelData.k
+                text: Lang.t(modelData.k)
                 font.pixelSize: 12
                 color: Colors.dim
                 elide: Text.ElideRight

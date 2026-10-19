@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
+import QtMultimedia
 import Qt5Compat.GraphicalEffects
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pam
 import "../components"
 import "../singletons"
@@ -13,13 +15,24 @@ import "../singletons"
 //    Esc           — очистить поле
 //
 // Пароль проверяет PAM тем же сервисом, что и swaylock (/etc/pam.d/swaylock),
-// цвета берёт из палитры темы, фон — текущие обои (движок держит их в
-// ~/.cache/wallpaper/current.png, поэтому экран всегда совпадает с рабочим столом).
+// цвета берёт из палитры темы, фон — те же обои, что на рабочем столе:
+// путь движок хранит в ~/.cache/wallpaper/current_<монитор>_src, поэтому
+// анимированные GIF-обои играют и здесь (gif-cache.sh отдаёт готовый mp4).
 Item {
     id: root
 
     readonly property string home: Quickshell.env("HOME") ?? ""
-    readonly property string wallpaper: home + "/.cache/wallpaper/current.png"
+    readonly property string cacheDir: home + "/.cache/wallpaper"
+    readonly property string gifScript: home + "/.config/wallpaper/gif-cache.sh"
+    readonly property string staticCopy: cacheDir + "/current.png"
+
+    // имя монитора приходит из WlSessionLockSurface
+    property string screenName: ""
+
+    property string srcPath: ""   // исходные обои (как выбрал человек)
+    property string poster: ""    // копия обоев в кеше: первый кадр, если видео ещё грузится
+    property string media: ""     // что рисуем: mp4 для гифки/видео, файл для картинки
+    property bool isVideo: false
 
     property string timeText: "--:--"
     property string dateText: ""
@@ -42,6 +55,66 @@ Item {
     }
 
     Component.onDestruction: pam.abort()
+
+    // ── фон: те же обои, что на рабочем столе ────────────────────────────────
+
+    // исходный файл: гифку и видео играем, картинку показываем как есть
+    function prepare(p) {
+        p = String(p || "").trim();
+        if (p === "" || p === root.srcPath)
+            return;
+        root.srcPath = p;
+        const low = p.toLowerCase();
+        if (low.endsWith(".gif")) {
+            gifProc.command = ["bash", root.gifScript, p,
+                               String(Math.round(root.surfaceWidth)),
+                               String(Math.round(root.surfaceHeight))];
+            gifProc.running = true;
+            return;
+        }
+        root.isVideo = low.endsWith(".mp4") || low.endsWith(".mkv")
+                    || low.endsWith(".mov") || low.endsWith(".webm");
+        root.media = p;
+    }
+
+    FileView {
+        id: srcView
+        path: root.screenName !== "" ? root.cacheDir + "/current_" + root.screenName + "_src" : ""
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.prepare(typeof text === "function" ? text() : text)
+    }
+
+    // запасной вариант: копия в кеше (её же показываем, пока mp4 собирается)
+    FileView {
+        id: dstView
+        path: root.screenName !== "" ? root.cacheDir + "/current_" + root.screenName : ""
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            let p = (typeof text === "function" ? text() : text) || "";
+            root.poster = p.trim();
+            if (root.srcPath === "")
+                root.prepare(root.poster);
+        }
+    }
+
+    Process {
+        id: gifProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let p = (this.text || "").trim().split("\n")[0];
+                if (p.startsWith("/")) {
+                    root.media = p;
+                    root.isVideo = true;
+                } else {
+                    // ffmpeg не справился — покажем саму гифку первым кадром
+                    root.media = root.srcPath;
+                    root.isVideo = false;
+                }
+            }
+        }
+    }
 
     // ── время и дата ─────────────────────────────────────────────────────────
 
@@ -67,20 +140,59 @@ Item {
 
     Rectangle { anchors.fill: parent; color: Colors.base }
 
-    Image {
-        id: bg
+    Item {
+        id: bgWrap
         anchors.centerIn: parent
         width: parent.width * 1.16
         height: parent.height * 1.16
-        asynchronous: true
-        cache: false
-        fillMode: Image.PreserveAspectCrop
-        source: root.wallpaper
         transform: Scale {
-            origin.x: bg.width / 2
-            origin.y: bg.height / 2
+            origin.x: bgWrap.width / 2
+            origin.y: bgWrap.height / 2
             xScale: root.drift
             yScale: root.drift
+        }
+
+        Image {
+            id: bg
+            anchors.fill: parent
+            asynchronous: true
+            cache: false
+            fillMode: Image.PreserveAspectCrop
+            visible: !root.isVideo
+            source: root.isVideo ? ""
+                    : "file://" + (root.media !== "" ? root.media
+                                  : (root.poster !== "" ? root.poster : root.staticCopy))
+        }
+
+        // гифка или видео — тем же трактом, что и рабочий стол
+        Loader {
+            anchors.fill: parent
+            active: root.isVideo && root.media !== ""
+            visible: root.isVideo
+            sourceComponent: Component {
+                Item {
+                    MediaPlayer {
+                        id: lockPlayer
+                        source: root.isVideo && root.media !== "" ? "file://" + root.media : ""
+                        videoOutput: lockOut
+                        loops: MediaPlayer.Infinite
+                        onMediaStatusChanged: {
+                            if (mediaStatus === MediaPlayer.EndOfMedia) {
+                                setPosition(0);
+                                play();
+                            } else if (mediaStatus === MediaPlayer.LoadedMedia
+                                       || mediaStatus === MediaPlayer.BufferedMedia) {
+                                play();
+                            }
+                        }
+                    }
+                    VideoOutput {
+                        id: lockOut
+                        anchors.fill: parent
+                        fillMode: VideoOutput.PreserveAspectCrop
+                    }
+                }
+            }
         }
     }
 

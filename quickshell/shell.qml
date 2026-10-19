@@ -111,6 +111,7 @@ ShellRoot {
             LockScreen {
                 surfaceWidth: lockSurface.width
                 surfaceHeight: lockSurface.height
+                screenName: lockSurface.screen ? lockSurface.screen.name : ""
             }
         }
     }

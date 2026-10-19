@@ -23,7 +23,7 @@ import re
 import subprocess
 import sys
 import time
-from i18n import tr
+from i18n import tr, language
 
 HOME = os.path.expanduser("~")
 CACHE = f"{HOME}/.cache/quickshell"
@@ -214,7 +214,7 @@ def calc_row(raw):
     if isinstance(value, complex) or value != value:
         return None
     return {
-        "kind": "calc", "title": fmt(value), "hint": f"считать: {raw.strip()}",
+        "kind": "calc", "title": fmt(value), "hint": tr("считать: ") + raw.strip(),
         "action": "", "copy": fmt(value), "id": "calc",
     }
 
@@ -354,14 +354,16 @@ def web_items(raw):
         return []
     from urllib.parse import quote_plus
     enc = quote_plus(q)
+    # википедия — на языке интерфейса
+    wiki = {"en": "en", "uk": "uk", "de": "de"}.get(language(), "ru")
     out = []
     if re.match(r"^[\w.-]+\.[a-z]{2,}(/\S*)?$", q, re.I):
-        out.append(make("web", f"Открыть {q}", tr("ссылка"),
+        out.append(make("web", tr("Открыть") + " " + q, tr("ссылка"),
                         f"xdg-open 'https://{q}'", "web:url", "", -50))
-    out.append(make("web", f"Найти «{q}» в интернете", "DuckDuckGo",
+    out.append(make("web", tr("Найти в интернете") + ": " + q, "DuckDuckGo",
                     f"xdg-open 'https://duckduckgo.com/?q={enc}'", "web:ddg", "", -50))
-    out.append(make("web", f"«{q}» в Википедии", tr("Википедия"),
-                    f"xdg-open 'https://ru.wikipedia.org/w/index.php?search={enc}'",
+    out.append(make("web", q + " — " + tr("Википедия"), tr("Википедия"),
+                    f"xdg-open 'https://{wiki}.wikipedia.org/w/index.php?search={enc}'",
                     "web:wiki", "", -50))
     return out
 

@@ -99,7 +99,7 @@ ColumnLayout {
 
                     Label {
                         Layout.fillWidth: true
-                        text: row.modelData.note
+                        text: Lang.t(row.modelData.note)
                         font.pixelSize: 10
                         color: Qt.alpha(Colors.dim, 0.75)
                         elide: Text.ElideRight

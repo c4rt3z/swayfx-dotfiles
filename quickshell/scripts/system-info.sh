@@ -13,6 +13,20 @@ first_line() {
     head -n 1
 }
 
+# ── язык ─────────────────────────────────────────────────────────────────────
+# Ключи (ОС, Ядро, …) переводит панель через Lang.t, а значения собираются здесь —
+# поэтому единицы измерения берём из того же файла языка.
+
+lang=$(head -n 1 "$HOME/.config/quickshell/language" 2>/dev/null | tr -d '[:space:]')
+[ -n "$lang" ] || lang=ru
+
+case "$lang" in
+en) u_gib="GiB"; u_of="of"; u_hz="Hz"; u_day="d"; u_hour="h"; u_min="min" ;;
+uk) u_gib="ГіБ"; u_of="з"; u_hz="Гц"; u_day="д"; u_hour="год"; u_min="хв" ;;
+de) u_gib="GiB"; u_of="von"; u_hz="Hz"; u_day="T"; u_hour="Std"; u_min="Min" ;;
+*) u_gib="ГиБ"; u_of="из"; u_hz="Гц"; u_day="д"; u_hour="ч"; u_min="мин" ;;
+esac
+
 # ── система ──────────────────────────────────────────────────────────────────
 
 os=$(grep -m1 '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2- | tr -d '"')
@@ -35,16 +49,17 @@ gpu=$(lspci 2>/dev/null | grep -Ei 'vga|3d|display' | first_line \
       | sed 's/.*: //; s/ (rev .*)//; s/\[[^]]*\]//g; s/  */ /g; s/ $//')
 [ -n "$gpu" ] && key "Видео" "$gpu"
 
-mem=$(awk '/^MemTotal/ {printf "%.1f ГиБ", $2 / 1048576}' /proc/meminfo 2>/dev/null)
+mem=$(awk -v u="$u_gib" '/^MemTotal/ {printf "%.1f %s", $2 / 1048576, u}' /proc/meminfo 2>/dev/null)
 [ -n "$mem" ] && key "Память" "$mem"
 
-disk=$(df -h / 2>/dev/null | awk 'NR==2 {print $3 " из " $2 "  (" $5 ")"}')
+disk=$(df -h / 2>/dev/null | awk -v w="$u_of" 'NR==2 {print $3 " " w " " $2 "  (" $5 ")"}')
 [ -n "$disk" ] && key "Диск" "$disk"
 
 # ── окружение ────────────────────────────────────────────────────────────────
 
 screen=$(swaymsg -t get_outputs 2>/dev/null | python3 -c '
 import json, sys
+hz_unit = sys.argv[1] if len(sys.argv) > 1 else "Гц"
 try:
     outs = json.load(sys.stdin)
 except Exception:
@@ -57,10 +72,10 @@ for o in outs:
     w, h = mode.get("width"), mode.get("height")
     hz = mode.get("refresh")
     size = "%sx%s" % (w, h) if w and h else ""
-    rate = " @ %d Гц" % round(hz / 1000) if hz else ""
+    rate = " @ %d %s" % (round(hz / 1000), hz_unit) if hz else ""
     print("%s%s%s%s" % (model, " — " if model and size else "", size, rate))
     break
-')
+' "$u_hz")
 [ -n "$screen" ] && key "Экран" "$screen"
 
 compositor=$(swaymsg -t get_version 2>/dev/null | python3 -c '
@@ -94,11 +109,11 @@ if [ -n "$secs" ]; then
     h=$(((secs % 86400) / 3600))
     m=$(((secs % 3600) / 60))
     if [ "$d" -gt 0 ]; then
-        uptime_str="$d д $h ч"
+        uptime_str="$d $u_day $h $u_hour"
     elif [ "$h" -gt 0 ]; then
-        uptime_str="$h ч $m мин"
+        uptime_str="$h $u_hour $m $u_min"
     else
-        uptime_str="$m мин"
+        uptime_str="$m $u_min"
     fi
     key "Включён" "$uptime_str"
 fi
