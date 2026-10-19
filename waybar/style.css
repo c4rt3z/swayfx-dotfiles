@@ -12,8 +12,8 @@
 
 /* --- СПЛОШНАЯ ПАНЕЛЬ НА ВСЮ ШИРИНУ (прозрачность как у терминала: 0.75) --- */
 window#waybar {
-    background: alpha(#1e1f25, 0.75);
-    color: #b6c4ff;
+    background: alpha(#261e18, 0.75);
+    color: #ffb783;
     padding: 0 10px;
 }
 
@@ -31,7 +31,7 @@ window#waybar {
 #language,
 #tray {
     background: transparent;
-    color: #b6c4ff;
+    color: #ffb783;
     margin: 0;
     padding: 1px 14px 0;
     /* тень только на тёмном фоне: на светлой теме приходит none (см. theme-render.py) */
@@ -49,14 +49,14 @@ window#waybar {
 #language,
 #tray,
 #custom-power {
-    border-left: 1px solid alpha(#b6c4ff, 0.22);
+    border-left: 1px solid alpha(#ffb783, 0.22);
 }
 
 /* Название окна — в левом углу, цветом темы (акцент из палитры). Отделено от
    часов разделителем справа; когда окна нет, модуль прячется вместе с ним. */
 #custom-title {
-    color: #b6c4ff;
-    border-right: 1px solid alpha(#b6c4ff, 0.22);
+    color: #ffb783;
+    border-right: 1px solid alpha(#ffb783, 0.22);
 }
 
 /* Логотип меню приложений — самый левый модуль бара. Он крупнее прочих модулей,
@@ -66,19 +66,19 @@ window#waybar {
 #custom-logo {
     font-size: 16px;
     padding: 1px 22px 0 16px;
-    border-right: 1px solid alpha(#b6c4ff, 0.22);
+    border-right: 1px solid alpha(#ffb783, 0.22);
 }
 
 /* Центр занят только музыкой, закрыт с двух сторон */
 #custom-center {
-    border-right: 1px solid alpha(#b6c4ff, 0.22);
+    border-right: 1px solid alpha(#ffb783, 0.22);
 }
 
 /* Кнопка меню приложений и кнопка питания: при наведении заливаются акцентом */
 #custom-logo:hover,
 #custom-power:hover {
-    color: #1e2d61;
-    background: #b6c4ff;
+    color: #4f2500;
+    background: #ffb783;
 }
 
 /* Индикатор раскладки не отдаём под сжатие — эллипсис ему не нужен */
@@ -88,14 +88,14 @@ window#waybar {
 
 /* --- РАБОЧИЕ СТОЛЫ --- */
 #workspaces {
-    border-right: 1px solid alpha(#b6c4ff, 0.22);
+    border-right: 1px solid alpha(#ffb783, 0.22);
     padding: 0 6px;
 }
 
 #workspaces button {
     padding: 1px 6px;
     margin: 3px 1px;
-    color: alpha(#b6c4ff, 0.4);
+    color: alpha(#ffb783, 0.4);
     background: transparent;
     border-radius: 4px;
 }
@@ -103,14 +103,14 @@ window#waybar {
 /* ВАЖНО: hover объявлен до active/focused/urgent,
    иначе наведённая кнопка перебивает активную (кликнутый стол не подсвечивается) */
 #workspaces button:hover {
-    background: alpha(#b6c4ff, 0.18);
-    color: #b6c4ff;
+    background: alpha(#ffb783, 0.18);
+    color: #ffb783;
 }
 
 #workspaces button.focused,
 #workspaces button.active {
-    color: #1e2d61;
-    background: #b6c4ff;
+    color: #4f2500;
+    background: #ffb783;
 }
 
 #workspaces button.urgent {
