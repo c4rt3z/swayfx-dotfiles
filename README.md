@@ -143,6 +143,20 @@ wallpaper ──► wallpaper/theme-gen.sh ──► ~/.cache/wallpaper/theme/co
                      └── swaylock, wofi           same palette
 ```
 
+**Slideshow and parallax.** The wallpaper panel (`Super+Shift+W`) has a
+“slideshow: on/off” switch in its bottom row: one click starts it, and the
+interval next to it cycles through 5, 15, 30, 60 and 120 minutes. The shell
+changes the wallpaper itself; the state lives in
+`~/.config/wallpaper/slideshow.json`, and the terminal equivalent is
+`wallpaper/slideshow.sh on 30`. The wallpaper also drifts slightly with the
+cursor: parallax runs while the pointer is over the desktop.
+
+**Blur.** The waybar and quickshell panels blur what is behind them (`layer_effects`
+blocks in `~/.config/sway/config`, toggled in “Bar” → “Blur”), and so do the
+notification toasts. The lock screen is a session surface rather than a layer, so
+the shell blurs its wallpaper itself (in QML), animated GIFs and video included;
+under the clock it shows the battery charge and the track that is playing.
+
 `apps-theme.py sync` additionally flips every app between light and dark: the palette
 luminance decides whether GTK, Qt and KDE use their light or dark variant, so a light
 wallpaper gives light applications and a dark one gives dark applications. The
@@ -150,7 +164,7 @@ wallpaper gives light applications and a dark one gives dark applications. The
 
 ## Settings (`Super+,`)
 
-One quickshell window, ten sections — everything writes straight into the configs:
+One quickshell window, twelve sections — everything writes straight into the configs:
 
 | Section | What it does |
 | --- | --- |
@@ -158,7 +172,10 @@ One quickshell window, ten sections — everything writes straight into the conf
 | Appearance | wallpaper, colour flavour, light/dark for every app, fonts (global, panels, waybar) |
 | Language | interface language (ru, en, uk, de) and the region |
 | Apps | theme for applications, GTK/Qt/KDE summary |
-| Bar | waybar modules: what to show and where |
+| Bar | waybar modules: what to show and where; bar position (top or bottom), look (solid, floating island, no background) and blur |
+| Sidebar | screen side, width, button labels, tile grid (2×3 or 3×2) and widgets: weather, track, session, shots, clipboard |
+| Weather | source (open-meteo without a key, or an OpenWeather key), city, units |
+| Sound | volume, output device, sound card profiles and the EasyEffects equalizer: presets, bypass, service |
 | Keys | every sway binding as `shortcut — command`, with rebinding |
 | Layouts | keyboard layouts: enable, disable, pick the active one |
 | Default applications | one application per task, Windows style (terminal, file manager, browser, editor, images, video, music, PDF, archives, mail) |
@@ -207,7 +224,15 @@ and register the code in `singletons/Lang.qml` and in `waybar/scripts/waybar-lan
 ## Sidebar, weather and calendar
 
 `Super+D` (or `Super+\``) opens the **sidebar** — a panel one quarter of the
-screen wide. It has three blocks:
+screen wide. It is configured in `Super+,` → “Sidebar”: which side of the screen
+it uses (left or right), its width (16–40% of the screen), whether session
+buttons keep their labels, whether tiles come 2×3 or 3×2, and which blocks are
+enabled — weather, “now playing”, session, shots, clipboard. The settings live in
+`~/.config/quickshell/sidebar.json` and apply on the spot.
+
+At the top it shows **weather** (icon, temperature, description, city; a click
+opens the weather panel) and **“now playing”** — cover, title and artist; a click
+opens the player. Then come the blocks:
 
 * **session** — tiles two per row: lock, switch user, suspend, log out, reboot
   and power off. Dangerous actions ask for a second click;

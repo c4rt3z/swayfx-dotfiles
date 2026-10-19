@@ -35,6 +35,11 @@ Item {
     property string media: ""     // что рисуем: mp4 для гифки/видео, файл для картинки
     property bool isVideo: false
 
+    // мелочи, которые видно и под замком: заряд батареи и играющий трек
+    property int batteryPercent: -1
+    property bool batteryCharging: false
+    property var track: ({ title: "", artist: "" })
+
     property string timeText: "--:--"
     property string dateText: ""
     property int surfaceWidth: 0
@@ -42,6 +47,40 @@ Item {
     property real drift: 1
     property real shake: 0
     property string pendingPassword: ""
+
+    function readStatus(raw) {
+        const lines = String(raw || "").split("\n");
+        const cap = parseInt(lines[0], 10);
+        root.batteryPercent = isNaN(cap) ? -1 : cap;
+        root.batteryCharging = String(lines[1] || "").trim() === "Charging";
+        const meta = String(lines[2] || "").split("\t");
+        root.track = {
+            title: String(meta[0] || "").trim(),
+            artist: String(meta[1] || "").trim()
+        };
+    }
+
+    // Заряд и трек перечитываем нечасто: под замком это фон, а не приборная
+    // панель. Своих уведомлений оболочка под замком не показывает — трек
+    // здесь самое близкое к «чем человек занят».
+    Process {
+        id: statusProc
+        command: ["sh", "-c",
+            "cat /sys/class/power_supply/BATT/capacity 2>/dev/null; " +
+            "cat /sys/class/power_supply/BATT/status 2>/dev/null; " +
+            "playerctl metadata --format '{{title}}\\t{{artist}}' 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: root.readStatus(text)
+        }
+    }
+
+    Timer {
+        interval: 20000
+        repeat: true
+        running: root.visible
+        triggeredOnStart: true
+        onTriggered: statusProc.running = true
+    }
 
     // quickshell не выставляет размер контенту поверхности — приходит извне
     width: surfaceWidth
@@ -253,6 +292,57 @@ Item {
             color: Colors.text
             opacity: 0.62
             font.pixelSize: 24
+        }
+
+        // заряд и трек — мелкой строкой под датой
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 18
+            visible: root.batteryPercent >= 0 || root.track.title !== ""
+
+            RowLayout {
+                visible: root.batteryPercent >= 0
+                spacing: 6
+
+                Label {
+                    text: root.batteryCharging ? "\uf0e7"
+                          : (root.batteryPercent <= 15 ? "\uf244"
+                             : (root.batteryPercent <= 50 ? "\uf243" : "\uf240"))
+                    color: root.batteryPercent <= 15 ? Colors.red : Colors.text
+                    opacity: 0.72
+                    font.pixelSize: 13
+                }
+
+                Label {
+                    text: root.batteryPercent + "%"
+                    color: Colors.text
+                    opacity: 0.72
+                    font.pixelSize: 13
+                }
+            }
+
+            RowLayout {
+                visible: root.track.title !== ""
+                spacing: 6
+
+                Label {
+                    text: "\uf001"
+                    color: Colors.text
+                    opacity: 0.72
+                    font.pixelSize: 13
+                }
+
+                Label {
+                    Layout.maximumWidth: 340
+                    text: root.track.artist !== ""
+                          ? root.track.title + " — " + root.track.artist
+                          : root.track.title
+                    color: Colors.text
+                    opacity: 0.72
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
+                }
+            }
         }
 
         Rectangle {
