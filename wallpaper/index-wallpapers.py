@@ -28,6 +28,9 @@ THUMBS = os.path.join(CACHE, "thumbs")
 INDEX = os.path.join(CACHE, "index.json")
 GIF_SCRIPT = os.path.join(HOME, ".config", "wallpaper", "gif-cache.sh")
 
+# размер экрана определяем один раз за запуск
+_SCREEN = None
+
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".avif", ".gif", ".tif", ".tiff"}
 VIDEO_EXT = {".mp4", ".mkv", ".mov", ".webm"}
 
@@ -115,6 +118,33 @@ def make_thumb(im, dst: str):
     t.save(dst, "JPEG", quality=THUMB_QUALITY)
 
 
+def screen_size():
+    """Экран в пикселях (или None).
+
+    Движок обоев кеширует гифки под размер экрана, и панель обоев должна
+    прогревать тот же файл: иначе одна и та же гифка кодируется дважды —
+    один раз здесь, другой раз при показе.
+    """
+    global _SCREEN
+    if _SCREEN is not None:
+        return _SCREEN or None
+    _SCREEN = (0, 0)
+    if shutil.which("swaymsg"):
+        try:
+            out = subprocess.run(["swaymsg", "-t", "get_outputs"],
+                                 capture_output=True, text=True, timeout=3).stdout
+            for o in json.loads(out):
+                if not o.get("focused"):
+                    continue
+                mode = o.get("current_mode") or {}
+                if mode.get("width") and mode.get("height"):
+                    _SCREEN = (int(mode["width"]), int(mode["height"]))
+                    break
+        except Exception:
+            pass
+    return _SCREEN or None
+
+
 def gif_video(path: str):
     """Готовит mp4 из гифки (кеш ~/.cache/wallpaper/gif) и возвращает путь.
 
@@ -124,7 +154,11 @@ def gif_video(path: str):
     """
     if not os.path.exists(GIF_SCRIPT):
         return None
-    r = subprocess.run(["bash", GIF_SCRIPT, path], capture_output=True, text=True)
+    cmd = ["bash", GIF_SCRIPT, path]
+    size = screen_size()
+    if size:
+        cmd += [str(size[0]), str(size[1])]
+    r = subprocess.run(cmd, capture_output=True, text=True)
     out = (r.stdout or "").strip()
     return out if r.returncode == 0 and out and os.path.exists(out) else None
 

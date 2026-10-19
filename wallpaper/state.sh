@@ -29,8 +29,11 @@ set)
         DEST="$SRC"
         ;;
     *)
+        # -p: копия сохраняет время правки исходника, поэтому движок обоев
+        # видит её той же гифкой и берёт уже собранный mp4 из кеша, а не
+        # пересобирает заново под новый путь
         DEST="$CACHE/current_${MON}.${EXT}"
-        cp -f "$SRC" "$DEST" 2>/dev/null || DEST="$SRC"
+        cp -pf "$SRC" "$DEST" 2>/dev/null || DEST="$SRC"
         ;;
     esac
     printf '%s' "$DEST" >"$CACHE/current_$MON"
