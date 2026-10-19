@@ -26,6 +26,7 @@ Material You rebuilds the whole palette from every wallpaper, and animated GIF w
 │   ├── scripts/      python helpers: search engine, app/bind/layout indexes, theming
 │   ├── i18n/         interface languages: ru (source), en, uk, de
 │   ├── sidebar/      sidebar: clipboard, screenshots, session tiles
+│   ├── toasts/       notification popups (quickshell is the notifier daemon)
 │   ├── lock/         lock screen (replaces swaylock)
 │   └── docs/         screenshots
 ├── waybar/         bar config + scripts (window title, clock, media center, layout)
@@ -153,7 +154,7 @@ One quickshell window, ten sections — everything writes straight into the conf
 | Section | What it does |
 | --- | --- |
 | Home | system summary and the repository link |
-| Appearance | wallpaper, colour flavour, light/dark for every app |
+| Appearance | wallpaper, colour flavour, light/dark for every app, fonts (global, panels, waybar) |
 | Language | interface language (ru, en, uk, de) and the region |
 | Apps | theme for applications, GTK/Qt/KDE summary |
 | Bar | waybar modules: what to show and where |
@@ -176,10 +177,23 @@ put back the way it was (`as before`), and the snapshot for that lives in
 ## Search (`Super+Space`)
 
 Spotlight-like, sitting a quarter of the screen below the bar. It looks at
-applications, open windows, files in your home folders, and does arithmetic
-(`340*15%`). A query typed in the wrong keyboard layout is matched against the
-right one, and one or two typos are forgiven (`trlegram` → Telegram). Enter runs
-the first result, `Ctrl+1…9` the corresponding one.
+applications, open windows, files in your home folders, application menu entries
+(actions from `.desktop`: “Steam — Big Picture”, “Spectacle — capture area”) and
+does arithmetic (`340*15%`). A query typed in the wrong keyboard layout is
+matched against the right one, one or two typos are forgiven (`trlegram` →
+Telegram), and what you picked before ranks higher (history in
+`~/.cache/quickshell/search-history.txt`).
+
+Three more things right in the search field:
+
+* **units** — `10 km in miles`, `2 kg in pounds`, `70 f to c`;
+* **currencies** — `100 usd in rub`, rates from open.er-api.com cached for six
+  hours;
+* **translation** — `*hello world` translates into your interface language,
+  `*привет мир` into English. Enter copies the answer (MyMemory, Google as a
+  fallback).
+
+Enter runs the first result, `Ctrl+1…9` the corresponding one.
 
 ## Languages
 
@@ -211,10 +225,33 @@ emoji) and the temperature. The source is set in `Super+,` → “Weather”:
 open-meteo needs no key and no signup, an OpenWeather key switches to their
 data. The city is searched there too, units are °C/°F.
 
+Weather and time are separate: clicking the temperature opens **weather**,
+clicking the clock opens **calendar with the timer**. Weather shows the current
+conditions plus a five-day forecast (icon, description, min and max) — click the
+weather module in the bar or `qs ipc call panel toggle weather`.
+
 **Calendar and timer** — click the clock in the bar (or `Super+C`): a month with
-today highlighted, the weather and a timer with presets from 1 to 45 minutes.
-The countdown lives in the shell, so the panel can be closed — a notification
-arrives at zero.
+today highlighted and a timer. Presets from 1 to 45 minutes plus a field for your
+own time: `25` for minutes, `25:30` for minutes and seconds, `1:05:00` for hours,
+minutes, seconds. The countdown lives in the shell, so the panel can be closed —
+a notification arrives at zero.
+
+**Battery** (click the charge icon in the bar) — percentage, time to full or
+empty, and an “Auto-lock when idle” switch: it turns off the five-minute idle
+screen lock without touching the lock before sleep.
+
+**Fonts** — `Super+,` → “Appearance”, below the “Fonts” rule. The list comes
+from fontconfig (searchable, each name drawn in its own face); you can set one
+font for every interface, override it for quickshell panels and for waybar, and
+reset to `JetBrainsMono Nerd Font`. Applied on the spot, no shell restart. The
+font must carry Nerd Font icons, otherwise glyphs turn into squares. Stored in
+`~/.config/quickshell/fonts.json`.
+
+**Notifications** — quickshell’s own toasts: the shell is the
+`org.freedesktop.Notifications` daemon itself, so dunst or swaync are not needed.
+Cards appear under the bar on the right, fade after five seconds (or whatever the
+app asks for), important ones stay until dismissed, hovering pauses the timer,
+and app-provided buttons (“Open”, “Reply”) are shown too.
 
 **Deep links to settings**: `qs ipc call settings open weather` opens the
 settings right on that section (home, appearance, language, apps, bar, weather,
@@ -368,6 +405,8 @@ keys, languages, defaults, services).
 
 | Shortcut | Command |
 | --- | --- |
+| `Alt+Tab` | `exec qs ipc call panel toggle switcher` (window switcher) |
+| `Alt+Shift+Tab` | `exec python3 $HOME/.config/quickshell/scripts/switcher.py prev` |
 | `Super+,` | `exec qs ipc call panel toggle settings` |
 | `Super+-` | `scratchpad show` |
 | `Super+A` | `exec qs ipc call panel open launcher` |

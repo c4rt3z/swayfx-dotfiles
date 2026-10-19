@@ -39,6 +39,8 @@ quickshell/keys-default.json
 # настройки погоды (там может лежать ключ OpenWeather) и шрифтов — свои у каждого
 quickshell/weather.json
 quickshell/fonts.json
+# флаг «автоблокировка по простою выключена» (тумблер в панели батареи)
+quickshell/no-auto-lock
 
 # сторонние темы alacritty — отдельный репозиторий, ставится клоном
 # (см. README: ~/.config/alacritty/themes)

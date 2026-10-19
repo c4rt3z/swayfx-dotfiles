@@ -80,7 +80,8 @@ ColumnLayout {
     readonly property real cellH: Math.round((picker.width > 0 ? picker.width / cols : 186) * 0.64)
 
     spacing: 10
-    implicitHeight: 204 + schemesFlow.implicitHeight + flavourFlow.implicitHeight + 70 + rows * cellH
+    // высоту считает сам ColumnLayout: ручная формула не учитывала отступы
+    // и обрезала страницу «Внешний вид» на пару десятков пикселей
 
     function baseName(p): string {
         let s = String(p || "");

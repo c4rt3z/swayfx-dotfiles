@@ -91,7 +91,7 @@ ColumnLayout {
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 14
                 selectionColor: Colors.accent
                 selectedTextColor: Colors.onAccent

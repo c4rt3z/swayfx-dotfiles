@@ -40,7 +40,7 @@
     "interval": 900,
     "return-type": "json",
     "tooltip": true,
-    "on-click": "qs ipc call panel toggle calendar"
+    "on-click": "qs ipc call panel toggle weather"
   },
   "sway/workspaces": {
     "disable-scroll": true,

@@ -20,6 +20,7 @@ import "singletons"
 import "lock"
 import "wallpaper"
 import "sidebar"
+import "toasts"
 
 ShellRoot {
     id: root
@@ -216,6 +217,8 @@ ShellRoot {
                                          || root.activePanel === "settings"
                                          || root.activePanel === "search"
                                          || root.activePanel === "calendar"
+                                         || root.activePanel === "weather"
+                                         || root.activePanel === "switcher"
         // эмодзи: поверхность во весь экран, карточка внутри — у курсора
         readonly property bool overlay: root.activePanel === "emoji"
         // настройки: центр по обеим осям
@@ -276,7 +279,8 @@ ShellRoot {
                                              : (root.activePanel === "music" ? 880
                                              : (root.activePanel === "emoji" ? 470
                                              : (root.activePanel === "search" ? 680
-                                             : (root.activePanel === "calendar" ? 420 : 380))))))
+                                             : ((root.activePanel === "calendar" || root.activePanel === "weather") ? 420
+                                             : (root.activePanel === "switcher" ? 700 : 380)))))))
         implicitWidth: win.overlay ? win.screenWidth : win.contentWidth
         // у эмодзи поверхность во весь экран: только так композитор скажет,
         // где курсор
@@ -296,6 +300,8 @@ ShellRoot {
             if (n === "emoji") return Lang.t("Эмодзи");
             if (n === "search") return Lang.t("Поиск");
             if (n === "calendar") return Lang.t("Календарь и таймер");
+            if (n === "weather") return Lang.t("Погода");
+            if (n === "switcher") return Lang.t("Переключение окон");
             return "";
         }
 
@@ -442,6 +448,8 @@ ShellRoot {
                         if (root.activePanel === "emoji") return emojiComp;
                         if (root.activePanel === "search") return searchComp;
                         if (root.activePanel === "calendar") return calendarComp;
+                        if (root.activePanel === "weather") return weatherComp;
+                        if (root.activePanel === "switcher") return switcherComp;
                         return null;
                     }
                 }
@@ -459,6 +467,8 @@ ShellRoot {
                 Component { id: emojiComp; EmojiPanel {} }
                 Component { id: searchComp; SearchPanel {} }
                 Component { id: calendarComp; CalendarPanel {} }
+                Component { id: weatherComp; WeatherPanel {} }
+                Component { id: switcherComp; SwitcherPanel {} }
             }
         }
     }
@@ -468,4 +478,7 @@ ShellRoot {
 
     // Сайдбар: своя поверхность слева, открывается по Mod+B (qs ipc call sidebar toggle)
     Sidebar {}
+
+    // Тосты: уведомления приложений (quickshell — сам демон уведомлений)
+    ToastStack {}
 }

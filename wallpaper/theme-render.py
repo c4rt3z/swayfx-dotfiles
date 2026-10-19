@@ -326,6 +326,18 @@ def scheme_palette(theme_id):
 
 # ── рендер ──────────────────────────────────────────────────────────────────
 
+def font_family():
+    """Шрифт для CSS: настройка waybar → общий шрифт → стандарт."""
+    default = "JetBrainsMono Nerd Font"
+    try:
+        with open(f"{HOME}/.config/quickshell/fonts.json", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return default
+    name = str(data.get("waybar") or data.get("ui") or default).strip() or default
+    return name.replace('"', "'")
+
+
 def render(palette):
     for name in REQUIRED:
         if name not in palette:
@@ -342,12 +354,14 @@ def render(palette):
         else "0 1px 2px rgba(0, 0, 0, 0.55)"
     )
 
+    extra = {"font": font_family()}
     out = {}
     for target, tpl in TPL_FILES.items():
         with open(os.path.join(TPL_DIR, tpl), encoding="utf-8") as f:
             text = f.read()
         text = re.sub(r"\{\{\s*([a-z_]+)\s*\}\}",
-                      lambda m: palette.get(m.group(1), m.group(0)), text)
+                      lambda m: palette.get(m.group(1)) or extra.get(m.group(1)) or m.group(0),
+                      text)
         left = re.findall(r"\{\{[^}]*\}\}", text)
         if left:
             raise RuntimeError(f"{tpl}: не подставлены цвета: {', '.join(sorted(set(left)))}")

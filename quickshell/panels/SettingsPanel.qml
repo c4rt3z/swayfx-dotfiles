@@ -17,6 +17,10 @@ ColumnLayout {
 
     property string section: "home"
 
+    // высокая страница прокручивается внутри карточки, а не уезжает за её край
+    readonly property real pageMaxHeight: Math.round(
+        (Quickshell.screens.length > 0 ? Quickshell.screens[0].height : 1200) * 0.80)
+
     readonly property var sections: [
         { key: "home", name: Lang.t("Главная"), glyph: "\uf015", ready: true },
         { key: "appearance", name: Lang.t("Внешний вид"), glyph: "\uf1fc", ready: true },
@@ -37,7 +41,7 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 14
 
-        implicitHeight: Math.max(sidebar.implicitHeight, page.item ? page.item.implicitHeight : 0)
+        implicitHeight: Math.max(sidebar.implicitHeight, pageScroll.height)
 
         // ── список разделов ─────────────────────────────────────────────────
 
@@ -126,37 +130,51 @@ ColumnLayout {
 
         // ── страница раздела ────────────────────────────────────────────────
 
-        Loader {
-            id: page
+        Flickable {
+            id: pageScroll
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
-            Layout.preferredHeight: item ? item.implicitHeight : 0
+            Layout.preferredHeight: Math.min(contentHeight, panel.pageMaxHeight)
+            contentWidth: width
+            contentHeight: page.item ? page.item.implicitHeight : 0
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
 
-            sourceComponent: {
-                if (panel.section === "home")
-                    return homePage;
-                if (panel.section === "appearance")
-                    return appearancePage;
-                if (panel.section === "apps")
-                    return appsPage;
-                if (panel.section === "language")
-                    return languagePage;
-                if (panel.section === "bar")
-                    return barPage;
-                if (panel.section === "weather")
-                    return weatherPage;
-                if (panel.section === "keys")
-                    return keysPage;
-                if (panel.section === "languages")
-                    return languagesPage;
-                if (panel.section === "defaults")
-                    return defaultsPage;
-                if (panel.section === "services")
-                    return servicesPage;
-                return null;
+            Loader {
+                id: page
+                width: pageScroll.width
+                height: item ? item.implicitHeight : 0
+
+                sourceComponent: {
+                    if (panel.section === "home")
+                        return homePage;
+                    if (panel.section === "appearance")
+                        return appearancePage;
+                    if (panel.section === "apps")
+                        return appsPage;
+                    if (panel.section === "language")
+                        return languagePage;
+                    if (panel.section === "bar")
+                        return barPage;
+                    if (panel.section === "weather")
+                        return weatherPage;
+                    if (panel.section === "keys")
+                        return keysPage;
+                    if (panel.section === "languages")
+                        return languagesPage;
+                    if (panel.section === "defaults")
+                        return defaultsPage;
+                    if (panel.section === "services")
+                        return servicesPage;
+                    return null;
+                }
             }
         }
     }
+
+    // новая страница — с начала
+    onSectionChanged: pageScroll.contentY = 0
 
     Component {
         id: homePage

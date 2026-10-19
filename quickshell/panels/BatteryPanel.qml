@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.UPower
 import "../components"
 import "../singletons"
@@ -10,6 +11,10 @@ ColumnLayout {
 
     property var d: UPower.displayDevice
     property bool ok: p.d !== null && p.d.ready
+    // автоблокировка по простою: включена, пока нет файла-флага
+    property bool autoLock: true
+
+    readonly property string lockFlag: (Quickshell.env("HOME") ?? "") + "/.config/quickshell/no-auto-lock"
 
     spacing: 9
 
@@ -80,5 +85,80 @@ ColumnLayout {
             + (p.ok ? "   ·   " + Math.abs(p.d.changeRate).toFixed(1) + Lang.t(" Вт") : "")
         color: Colors.dim
         font.pixelSize: 11
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: 1
+        color: Colors.divider
+    }
+
+    // Автоблокировка по простою (swayidle, 5 минут). Тумблер ставит или снимает
+    // файл-флаг — перезапускать swayidle не нужно, скрипт проверяет флаг сам.
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 0
+
+            Label {
+                Layout.fillWidth: true
+                text: Lang.t("Автоблокировка по простою")
+                color: Colors.text
+                font.pixelSize: 11
+            }
+            Label {
+                Layout.fillWidth: true
+                text: p.autoLock ? Lang.t("включена, 5 мин") : Lang.t("выключена")
+                color: p.autoLock ? Colors.dim : Colors.muted
+                font.pixelSize: 10
+            }
+        }
+
+        Item {
+            implicitWidth: 38
+            implicitHeight: 20
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: p.autoLock ? Qt.alpha(Colors.accent, 0.35) : Colors.track
+                border.width: 1
+                border.color: p.autoLock ? Colors.accent : Colors.border
+            }
+            Rectangle {
+                width: 14
+                height: 14
+                radius: 7
+                y: 3
+                x: p.autoLock ? parent.width - 17 : 3
+                color: p.autoLock ? Colors.accent : Colors.dim
+                Behavior on x { NumberAnimation { duration: 120 } }
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    p.autoLock = !p.autoLock;
+                    lockToggle.running = true;
+                }
+            }
+        }
+    }
+
+    FileView {
+        id: lockFlagView
+        path: p.lockFlag
+        watchChanges: true
+        onLoaded: p.autoLock = false
+        onLoadFailed: p.autoLock = true
+        onFileChanged: reload()
+    }
+
+    Process {
+        id: lockToggle
+        command: ["sh", "-c", "if [ -e \"$0\" ]; then rm -f \"$0\"; else touch \"$0\"; fi", p.lockFlag]
+        onExited: lockFlagView.reload()
     }
 }

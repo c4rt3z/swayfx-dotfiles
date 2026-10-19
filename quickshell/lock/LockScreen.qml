@@ -270,7 +270,7 @@ Item {
                     id: field
                     anchors.fill: parent
                     horizontalAlignment: TextInput.AlignHCenter
-                    font.family: "JetBrains Mono"
+                    font.family: Fonts.panelFamily
                     font.pixelSize: 20
                     color: Colors.text
                     echoMode: TextInput.Password

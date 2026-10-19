@@ -1,23 +1,19 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import "../components"
 import "../singletons"
 
-// Календарь, погода и таймер — по клику на часы в waybar.
+// Календарь и таймер — клик по часам в waybar (или Mod+C).
 //
-// Своего состояния почти нет: погоду берём из кэша ~/.cache/quickshell/
-// weather.json (его обновляет scripts/weather.py, тот же, что кормит виджет в
-// баре), а отсчёт таймера живёт в синглтоне Countdown — панель можно закрыть,
-// отсчёт продолжится, о конце напомнит уведомление.
+// Месяц и таймер живут вместе: часы в баре отвечают за время, погода — за
+// погоду (своя панель). Отсчёт таймера хранится в синглтоне Countdown, поэтому
+// панель можно закрыть — по нулю придёт уведомление.
 ColumnLayout {
     id: page
 
-    readonly property string home: Quickshell.env("HOME") ?? ""
-
-    // Месяцы и дни недели держим таблицей, а не локалью процесса: язык
-    // интерфейса задаётся в настройках и может не совпадать с локалью.
+    // Месяцы и дни недели таблицей, а не локалью процесса: язык интерфейса
+    // задаётся в настройках и может не совпадать с локалью.
     readonly property var monthNames: ({
         ru: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
@@ -38,8 +34,9 @@ ColumnLayout {
 
     property date shown: new Date()
     property var days: []
-    property var weather: ({})
-    // пресеты таймера в минутах
+    // ручной ввод таймера: «25» — минуты, «25:30» — минуты и секунды, «1:05:00» — часы
+    property string manual: ""
+
     readonly property var presets: [1, 3, 5, 10, 25, 45]
 
     spacing: 12
@@ -80,97 +77,34 @@ ColumnLayout {
         page.days = page.buildDays();
     }
 
+    // «25» → 25 минут, «25:30» → 25 мин 30 с, «1:05:00» → час пять минут
+    function parseTime(text) {
+        const t = (text || "").trim().replace(",", ":");
+        if (t === "")
+            return 0;
+        const parts = t.split(":").map(p => Number(p.trim()));
+        if (parts.length === 0 || parts.length > 3)
+            return -1;
+        for (let i = 0; i < parts.length; i++)
+            if (!isFinite(parts[i]) || parts[i] < 0)
+                return -1;
+        if (parts.length === 1)
+            return Math.round(parts[0] * 60);
+        if (parts.length === 2)
+            return Math.round(parts[0] * 60 + parts[1]);
+        return Math.round(parts[0] * 3600 + parts[1] * 60 + parts[2]);
+    }
+
+    function startManual() {
+        const sec = page.parseTime(page.manual);
+        if (sec <= 0)
+            return;
+        Countdown.start(sec, Lang.t("Таймер"), Lang.t("Время вышло"));
+        page.manual = "";
+    }
+
     onShownChanged: page.days = page.buildDays()
     Component.onCompleted: page.days = page.buildDays()
-
-    FileView {
-        id: weatherView
-        path: page.home + "/.cache/quickshell/weather.json"
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: {
-            let raw = typeof text === "function" ? text() : text;
-            try {
-                const parsed = JSON.parse(raw || "{}");
-                page.weather = parsed.data || {};
-            } catch (e) {
-                page.weather = ({});
-            }
-        }
-    }
-
-    Process {
-        id: refreshWeather
-        command: ["python3", page.home + "/.config/quickshell/scripts/weather.py", "refresh"]
-        onExited: weatherView.reload()
-    }
-
-    // ── погода ─────────────────────────────────────────────────────────────
-    Rectangle {
-        Layout.fillWidth: true
-        implicitHeight: weatherRow.implicitHeight + 16
-        radius: 8
-        color: Colors.selected
-
-        RowLayout {
-            id: weatherRow
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: 12
-
-            Label {
-                text: page.weather.icon || "\ue302"
-                color: Colors.accent
-                font.pixelSize: 26
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                Label {
-                    text: page.weather.ok
-                          ? (page.weather.temp + (page.weather.unit || "°C") + "  " + (page.weather.desc || ""))
-                          : Lang.t("Погода недоступна")
-                    color: Colors.text
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-
-                Label {
-                    text: page.weather.ok
-                          ? (page.weather.city || "")
-                            + (page.weather.feels !== undefined
-                               ? " · " + Lang.t("ощущается") + " " + page.weather.feels + (page.weather.unit || "°C")
-                               : "")
-                          : (page.weather.error || "")
-                    color: Colors.dim
-                    font.pixelSize: 11
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
-
-            Item {
-                implicitWidth: 24
-                implicitHeight: 24
-
-                Label {
-                    anchors.centerIn: parent
-                    text: "\uF021"
-                    color: refreshArea.containsMouse ? Colors.text : Colors.dim
-                    font.pixelSize: 13
-                }
-                MouseArea {
-                    id: refreshArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: refreshWeather.running = true
-                }
-            }
-        }
-    }
 
     // ── календарь ──────────────────────────────────────────────────────────
     RowLayout {
@@ -271,7 +205,6 @@ ColumnLayout {
                     color: modelData.today ? Colors.accent
                          : (modelData.inMonth ? (cellHover.containsMouse ? Colors.selected : "transparent")
                                               : "transparent")
-                    border.width: modelData.today ? 0 : 0
                 }
 
                 Label {
@@ -336,6 +269,82 @@ ColumnLayout {
         }
     }
 
+    // ручной ввод: «25», «25:30» или «1:05:00»
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 6
+        visible: !Countdown.active
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 30
+            radius: 6
+            color: Colors.base
+            border.width: 1
+            border.color: manualInput.activeFocus ? Colors.accent : Colors.border
+
+            Label {
+                anchors.fill: parent
+                anchors.leftMargin: 9
+                verticalAlignment: Text.AlignVCenter
+                visible: manualInput.text === ""
+                text: Lang.t("своё время: 25 или 1:30")
+                color: Colors.dim
+                font.pixelSize: 11
+            }
+
+            TextInput {
+                id: manualInput
+                anchors.fill: parent
+                anchors.leftMargin: 9
+                anchors.rightMargin: 9
+                verticalAlignment: TextInput.AlignVCenter
+                color: Colors.text
+                font.family: Fonts.panelFamily
+                font.pixelSize: 12
+                selectionColor: Colors.accent
+                selectedTextColor: Colors.onAccent
+                selectByMouse: true
+                text: page.manual
+                onTextChanged: page.manual = text
+                onAccepted: page.startManual()
+
+                cursorDelegate: Rectangle {
+                    width: 2
+                    color: Colors.accent
+                }
+            }
+        }
+
+        Item {
+            implicitWidth: 64
+            implicitHeight: 30
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 8
+                color: startHover.containsMouse ? Colors.selected : "transparent"
+                border.width: 1
+                border.color: (page.parseTime(page.manual) > 0) ? Colors.accent : Colors.divider
+            }
+            Label {
+                anchors.centerIn: parent
+                text: Lang.t("Старт")
+                color: (page.parseTime(page.manual) > 0)
+                       ? (startHover.containsMouse ? Colors.text : Colors.accent)
+                       : Colors.dim
+                font.pixelSize: 11
+            }
+            MouseArea {
+                id: startHover
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: page.startManual()
+            }
+        }
+    }
+
+    // пресеты
     RowLayout {
         Layout.fillWidth: true
         spacing: 6

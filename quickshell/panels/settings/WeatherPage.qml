@@ -265,7 +265,7 @@ ColumnLayout {
                 anchors.rightMargin: 10
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 12
                 selectionColor: Colors.accent
                 selectedTextColor: Colors.onAccent
@@ -389,7 +389,7 @@ ColumnLayout {
             anchors.rightMargin: 10
             verticalAlignment: TextInput.AlignVCenter
             color: Colors.text
-            font.family: "JetBrains Mono"
+            font.family: Fonts.panelFamily
             font.pixelSize: 12
             selectionColor: Colors.accent
             selectedTextColor: Colors.onAccent

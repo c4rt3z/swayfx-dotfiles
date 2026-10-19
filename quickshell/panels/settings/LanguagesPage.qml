@@ -178,7 +178,7 @@ ColumnLayout {
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 12
                 selectByMouse: false
                 onTextChanged: page.query = text

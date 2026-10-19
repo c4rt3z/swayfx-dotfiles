@@ -186,7 +186,7 @@ ColumnLayout {
                 anchors.rightMargin: 8
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 12
                 echoMode: TextInput.Password
                 passwordCharacter: "\u2022"

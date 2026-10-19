@@ -84,6 +84,41 @@ def parse_desktop(path):
     return entry
 
 
+def parse_actions(path, terminal):
+    """Действия из [Desktop Action ...]: имя и команда (см. Actions= в записи)."""
+    sections = {}
+    current = None
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.rstrip("\n")
+                if line.startswith("["):
+                    current = line.strip().strip("[]")
+                    sections.setdefault(current, {})
+                    continue
+                if current is None or not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                if k not in sections[current]:
+                    sections[current][k] = v.strip()
+    except OSError:
+        return []
+    entry = sections.get("Desktop Entry", {})
+    out = []
+    for aid in (x.strip() for x in re.split(r"[;,]", entry.get("Actions", ""))):
+        if not aid:
+            continue
+        sec = sections.get("Desktop Action " + aid)
+        if not sec:
+            continue
+        name = localised(sec, "Name").strip()
+        cmd = clean_exec(sec.get("Exec", ""), terminal)
+        if name and cmd:
+            out.append({"id": aid, "name": name, "exec": cmd})
+    return out
+
+
 def truthy(v):
     return str(v).strip().lower() == "true"
 
@@ -213,6 +248,8 @@ def collect(icon_files):
                     "mime": entry.get("MimeType", "").strip(),
                     "categories": entry.get("Categories", "").strip(),
                     "search": " ".join(x for x in (name, generic, comment, app_id)).lower(),
+                    # пункты контекстного меню приложения (Actions= в .desktop)
+                    "actions": parse_actions(path, terminal),
                 }
     items = sorted(seen.values(), key=lambda a: a["name"].casefold())
     return {"items": items}

@@ -181,7 +181,7 @@ ColumnLayout {
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 14
                 selectionColor: Colors.accent
                 selectedTextColor: Colors.onAccent
@@ -280,7 +280,7 @@ ColumnLayout {
                     Label {
                         Layout.fillWidth: true
                         text: page.edited ? page.edited.keys_raw : ""
-                        font.family: "JetBrains Mono"
+                        font.family: Fonts.panelFamily
                         font.pixelSize: 10
                         color: Qt.alpha(Colors.dim, 0.8)
                         elide: Text.ElideRight
@@ -346,7 +346,7 @@ ColumnLayout {
                             visible: !page.capturing
                             verticalAlignment: TextInput.AlignVCenter
                             color: Colors.text
-                            font.family: "JetBrains Mono"
+                            font.family: Fonts.panelFamily
                             font.pixelSize: 13
                             selectionColor: Colors.accent
                             selectedTextColor: Colors.onAccent
@@ -435,7 +435,7 @@ ColumnLayout {
                             anchors.rightMargin: 8
                             verticalAlignment: TextInput.AlignVCenter
                             color: Colors.text
-                            font.family: "JetBrains Mono"
+                            font.family: Fonts.panelFamily
                             font.pixelSize: 13
                             selectionColor: Colors.accent
                             selectedTextColor: Colors.onAccent
@@ -587,7 +587,7 @@ ColumnLayout {
                 Label {
                     Layout.fillWidth: true
                     text: keyRow.isHeader ? "" : keyRow.modelData.cmd
-                    font.family: "JetBrains Mono"
+                    font.family: Fonts.panelFamily
                     font.pixelSize: 11
                     color: keyHover.containsMouse ? Colors.text : Colors.dim
                     elide: Text.ElideRight

@@ -23,6 +23,8 @@ import re
 import subprocess
 import sys
 import time
+import urllib.parse
+import urllib.request
 from i18n import tr, language
 
 HOME = os.path.expanduser("~")
@@ -218,6 +220,264 @@ def calc_row(raw):
         "action": "", "copy": fmt(value), "id": "calc",
     }
 
+# ── перевод, единицы, валюты ────────────────────────────────────────────────
+#
+# Всё это — та же строка поиска, без интернета для единиц и с интернетом для
+# перевода и валют. Ответы кэшируем: набор «привет» не должен каждый раз ходить
+# в сеть, а курсы валют живут шесть часов.
+
+TR_CACHE = f"{CACHE}/translate.json"
+RATES_CACHE = f"{CACHE}/rates.json"
+
+# валюта: как её пишут -> код, и код -> значок для ответа
+CUR = {
+    "$": "USD", "usd": "USD", "доллар": "USD", "доллары": "USD", "долларов": "USD",
+    "€": "EUR", "eur": "EUR", "евро": "EUR",
+    "₽": "RUB", "rub": "RUB", "руб": "RUB", "рубль": "RUB", "рубля": "RUB", "рублей": "RUB",
+    "₴": "UAH", "uah": "UAH", "гривна": "UAH", "гривны": "UAH", "гривен": "UAH",
+    "byn": "BYN", "zł": "PLN", "pln": "PLN", "злотый": "PLN", "злотых": "PLN",
+    "£": "GBP", "gbp": "GBP", "фунт": "GBP", "фунтов": "GBP",
+    "¥": "CNY", "cny": "CNY", "юань": "CNY", "юаней": "CNY",
+    "jpy": "JPY", "иена": "JPY", "йена": "JPY", "kzt": "KZT", "тенге": "KZT",
+    "try": "TRY", "лира": "TRY", "chf": "CHF", "cad": "CAD", "aud": "AUD",
+    "btc": "BTC", "eth": "ETH", "usdt": "USDT",
+}
+CUR_SIGN = {"USD": "$", "EUR": "€", "RUB": "₽", "UAH": "₴", "GBP": "£", "CNY": "¥",
+            "JPY": "¥", "PLN": "zł", "KZT": "₸", "TRY": "₺"}
+
+# единицы: имя -> (величина, множитель к основной единице величины)
+LEN = {"mm": 0.001, "мм": 0.001, "cm": 0.01, "см": 0.01, "m": 1, "м": 1, "метр": 1,
+       "метра": 1, "метров": 1, "km": 1000, "км": 1000, "километр": 1000,
+       "in": 0.0254, "inch": 0.0254, "дюйм": 0.0254, "дюйма": 0.0254, "дюймов": 0.0254,
+       "дюйме": 0.0254, "дюймах": 0.0254,
+       "ft": 0.3048, "foot": 0.3048, "feet": 0.3048, "фут": 0.3048, "фута": 0.3048,
+       "футов": 0.3048, "футах": 0.3048, "yd": 0.9144, "ярд": 0.9144, "ярдов": 0.9144,
+       "ярдах": 0.9144, "mi": 1609.344, "mile": 1609.344, "miles": 1609.344,
+       "миля": 1609.344, "мили": 1609.344, "миль": 1609.344, "миле": 1609.344,
+       "милях": 1609.344, "метрах": 1, "сантиметрах": 0.01, "километрах": 1000,
+       "километров": 1000, "сантиметр": 0.01, "сантиметра": 0.01, "сантиметров": 0.01}
+MASS = {"g": 1, "г": 1, "грамм": 1, "грамма": 1, "граммов": 1, "kg": 1000, "кг": 1000,
+        "килограмм": 1000, "килограмма": 1000, "килограммов": 1000, "t": 1000000,
+        "т": 1000000, "тонна": 1000000, "тонны": 1000000, "тонн": 1000000,
+        "oz": 28.349523125, "унция": 28.349523125, "унций": 28.349523125,
+        "унциях": 28.349523125, "граммах": 1, "килограммах": 1000, "тоннах": 1000000,
+        "lb": 453.59237, "lbs": 453.59237, "фунт": 453.59237, "фунта": 453.59237,
+        "фунтов": 453.59237, "фунтах": 453.59237}
+VOL = {"ml": 0.001, "мл": 0.001, "l": 1, "л": 1, "литр": 1, "литра": 1, "литров": 1,
+       "gal": 3.785411784, "галлон": 3.785411784, "галлона": 3.785411784,
+       "pint": 0.473176473, "пинта": 0.473176473, "литрах": 1, "миллилитрах": 0.001,
+       "галлонах": 3.785411784}
+SPEED = {"kmh": 1, "кмч": 1, "км/ч": 1, "kph": 1, "mph": 1.609344, "миль/ч": 1.609344}
+DATA = {"b": 1 / 8000000, "kb": 0.001, "кб": 0.001, "mb": 1, "мб": 1, "gb": 1000,
+        "гб": 1000, "tb": 1000000, "тб": 1000000}
+AREA = {"m2": 1, "м2": 1, "м²": 1, "km2": 1000000, "км2": 1000000, "км²": 1000000,
+        "ha": 10000, "га": 10000, "acre": 4046.8564224, "акр": 4046.8564224}
+TIME = {"s": 1, "сек": 1, "секунда": 1, "секунд": 1, "min": 60, "мин": 60, "минута": 60,
+        "минут": 60, "минутах": 60, "h": 3600, "ч": 3600, "час": 3600, "часа": 3600,
+        "часов": 3600, "часах": 3600, "секундах": 1,
+        "day": 86400, "сутки": 86400, "день": 86400, "дней": 86400, "днях": 86400}
+TEMP = {"c": "c", "°c": "c", "цельсий": "c", "celsius": "c", "градус": "c", "градусов": "c",
+        "f": "f", "°f": "f", "фаренгейт": "f", "fahrenheit": "f",
+        "k": "k", "кельвин": "k", "kelvin": "k"}
+
+TEMP_SIGN = {"c": "°C", "f": "°F", "k": "K"}
+
+UNITS = {}
+for name, factor in LEN.items():
+    UNITS[name] = ("длина", factor)
+for name, factor in MASS.items():
+    UNITS[name] = ("масса", factor)
+for name, factor in VOL.items():
+    UNITS[name] = ("объём", factor)
+for name, factor in SPEED.items():
+    UNITS[name] = ("скорость", factor)
+for name, factor in DATA.items():
+    UNITS[name] = ("данные", factor)
+for name, factor in AREA.items():
+    UNITS[name] = ("площадь", factor)
+for name, factor in TIME.items():
+    UNITS[name] = ("время", factor)
+for name, kind in TEMP.items():
+    UNITS[name] = ("температура", kind)
+
+CONV_RE = re.compile(r"^\s*(-?\d+(?:[.,]\d+)?)\s*([^\s0-9]+)\s*(?:в|to|in|=>|->|→)\s*([^\s0-9]+)\s*$",
+                     re.IGNORECASE)
+
+
+def read_cache(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def write_cache(path, data):
+    try:
+        os.makedirs(CACHE, exist_ok=True)
+        tmp = f"{path}.tmp.{os.getpid()}"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, ensure_ascii=False)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
+
+def fmt_num(value):
+    """Число по-русски: пробел между тысячами, запятая в дробной части."""
+    if abs(value - round(value)) < 1e-9 and abs(value) < 1e15:
+        text = f"{int(round(value)):,}".replace(",", " ")
+        return text
+    if abs(value) >= 1000:
+        text = f"{value:,.2f}".replace(",", " ").replace(".", ",")
+    else:
+        text = f"{value:.4g}".replace(".", ",")
+    return text
+
+
+def _get_json(url, timeout):
+    with urllib.request.urlopen(url, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _translate_mymemory(text, target):
+    """MyMemory: без ключа, лимит на день, но работает почти везде."""
+    source = "ru" if re.search(r"[а-яёіїєґ]", text, re.IGNORECASE) else "en"
+    if source == target:
+        return ""
+    try:
+        data = _get_json("https://api.mymemory.translated.net/get?" + urllib.parse.urlencode({
+            "q": text, "langpair": source + "|" + target}), 6)
+        out = ((data.get("responseData") or {}).get("translatedText") or "").strip()
+    except Exception:
+        return ""
+    # сервис отвечает подсказками про лимит прямо в поле перевода
+    if not out or "MYMEMORY WARNING" in out.upper():
+        return ""
+    return out
+
+
+def _translate_google(text, target):
+    """Открытый эндпоинт Google; на некоторых адресах отдаёт 429."""
+    try:
+        query = urllib.parse.urlencode({"client": "gtx", "sl": "auto", "tl": target,
+                                        "dt": "t", "q": text})
+        data = _get_json("https://translate.googleapis.com/translate_a/single?" + query, 4)
+        return "".join(part[0] for part in (data[0] or []) if part and part[0])
+    except Exception:
+        return ""
+
+
+def translate(text, target):
+    """Перевод с кэшем в ~/.cache/quickshell: сначала MyMemory, потом Google."""
+    cache = read_cache(TR_CACHE)
+    key = target + "|" + text
+    if key in cache:
+        return str(cache[key])
+    out = _translate_mymemory(text, target) or _translate_google(text, target)
+    if out:
+        cache[key] = out
+        if len(cache) > 800:
+            cache = dict(list(cache.items())[-400:])
+        write_cache(TR_CACHE, cache)
+    return out
+
+
+def translate_row(raw):
+    """«*текст» — перевод: русский -> английский, всё прочее -> язык интерфейса."""
+    text = (raw or "").strip()
+    if not text.startswith("*"):
+        return None
+    src = text[1:].strip()
+    if len(src) < 2:
+        return None
+    target = "en" if re.search(r"[а-яёіїєґ]", src, re.IGNORECASE) else language()
+    if target not in ("ru", "en", "uk", "de"):
+        target = "ru"
+    out = translate(src, target)
+    if not out:
+        return None
+    return {
+        "kind": "translate", "title": out,
+        "hint": tr("перевод") + " · " + target.upper(),
+        "action": "", "copy": out, "id": "translate:" + out,
+    }
+
+
+def rates():
+    """Курсы к USD: open.er-api.com, без ключа; обновляем раз в 6 часов."""
+    cache = read_cache(RATES_CACHE)
+    if cache.get("rates") and time.time() - float(cache.get("fetched") or 0) < 6 * 3600:
+        return cache["rates"]
+    try:
+        with urllib.request.urlopen("https://open.er-api.com/v6/latest/USD",
+                                    timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        table = data.get("rates") or {}
+        if table:
+            write_cache(RATES_CACHE, {"fetched": time.time(), "rates": table})
+            return table
+    except Exception:
+        pass
+    return cache.get("rates") or {}
+
+
+def _temp_to_celsius(value, kind):
+    if kind == "c":
+        return value
+    if kind == "f":
+        return (value - 32) * 5 / 9
+    return value - 273.15
+
+
+def _celsius_to(value, kind):
+    if kind == "c":
+        return value
+    if kind == "f":
+        return value * 9 / 5 + 32
+    return value + 273.15
+
+
+def convert_row(raw):
+    """"100 usd в rub", "10 км в милях", "70 f to c" -> строка с ответом."""
+    m = CONV_RE.match(raw or "")
+    if not m:
+        return None
+    value = float(m.group(1).replace(",", "."))
+    src, dst = m.group(2).strip().lower(), m.group(3).strip().lower()
+
+    cur_a, cur_b = CUR.get(src.lstrip(".")), CUR.get(dst.lstrip("."))
+    if cur_a and cur_b and cur_a != cur_b:
+        table = rates()
+        ra, rb = table.get(cur_a), table.get(cur_b)
+        if not ra or not rb:
+            return None
+        result = value / float(ra) * float(rb)
+        sign = CUR_SIGN.get(cur_b, "")
+        shown = (fmt_num(result) + " " + (sign or cur_b)).strip()
+        return {
+            "kind": "calc", "title": shown,
+            "hint": tr("валюта: ") + f"{fmt_num(value)} {cur_a} → {cur_b}",
+            "action": "", "copy": f"{fmt_num(result)} {cur_b}", "id": "conv:" + shown,
+        }
+
+    unit_a, unit_b = UNITS.get(src), UNITS.get(dst)
+    if not unit_a or not unit_b or unit_a[0] != unit_b[0]:
+        return None
+    if unit_a[0] == "температура":
+        result = _celsius_to(_temp_to_celsius(value, unit_a[1]), unit_b[1])
+        shown = fmt_num(result) + " " + TEMP_SIGN.get(unit_b[1], "")
+    else:
+        result = value * unit_a[1] / unit_b[1]
+        shown = fmt_num(result) + " " + dst
+    return {
+        "kind": "calc", "title": shown,
+        "hint": tr("перевести: ") + f"{fmt_num(value)} {src} → {dst}",
+        "action": "", "copy": shown, "id": "conv:" + shown,
+    }
+
+
 # ── источники ───────────────────────────────────────────────────────────────
 
 
@@ -240,6 +500,14 @@ def app_items():
                               a.get("id", ""), a.get("search", "")]))
         out.append(make("app", a.get("name", ""), a.get("comment", ""),
                         a.get("exec", ""), a.get("exec", ""), text, 60))
+        # действия из .desktop: «GIMP — открыть как…», «Steam — Big Picture»
+        for act in a.get("actions") or []:
+            act_text = norm(" ".join([a.get("name", ""), act.get("name", ""),
+                                      act.get("id", "")]))
+            out.append(make("appaction", act.get("name", ""), a.get("name", ""),
+                            act.get("exec", ""),
+                            "act:" + a.get("id", "") + ":" + act.get("id", ""),
+                            act_text, 20))
     return out
 
 
@@ -386,6 +654,12 @@ def build(raw):
     calc = calc_row(raw)
     if calc:
         rows.append(calc)
+    conv = convert_row(raw)
+    if conv:
+        rows.append(conv)
+    trans = translate_row(raw)
+    if trans:
+        rows.append(trans)
 
     if query.startswith(">"):
         cmd = raw.strip()[1:].strip()
@@ -402,8 +676,8 @@ def build(raw):
         # Приложения важнее окон, окна важнее файлов: в Spotlight файл не должен
         # перебивать программу. И не больше горсти строк одного вида, чтобы
         # список не превращался в свалку однотипных файлов.
-        boosts = {"app": 800, "action": 600, "win": 500, "file": 40}
-        caps = {"app": 10, "action": 6, "win": 6, "file": 8}
+        boosts = {"app": 800, "action": 600, "appaction": 400, "win": 500, "file": 40}
+        caps = {"app": 10, "action": 6, "appaction": 4, "win": 6, "file": 8}
         scored = []
         for item in items:
             deep = item["kind"] != "file"       # файлам опечатки не нужны
@@ -466,6 +740,9 @@ def selftest():
         (tr("обои"), tr("Обои и темы")),       # своё действие
         ("screenshot", tr("Снимок")),
         ("alacritty", "Alacritty"),    # приложение важнее одноимённого файла
+        ("10 " + tr("км") + " " + tr("в") + " милях", tr("милях")),   # единицы
+        ("70 f to c", "°C"),           # температура
+        ("steam big picture", "Big Picture"),   # действие из .desktop
     ]
     bad = 0
     for query, want in checks:
@@ -476,7 +753,18 @@ def selftest():
         if not ok:
             bad += 1
         print(f"  {tr('ок ') if ok else tr('МИМО')} {query:12} -> {titles[:4]}")
-    print(f"  итого: {len(checks) - bad} из {len(checks)}")
+    # перевод ходит в сеть — проверяем отдельно и не считаем провалом офлайн
+    if translate("привет", "en"):
+        rows = build("*" + tr("привет"))
+        titles = [r["title"] for r in rows[:3]]
+        ok = bool(titles) and titles[0].lower() != ("*" + tr("привет")).lower()
+        print(f"  {tr('ок ') if ok else tr('МИМО')} *{tr('привет'):12} -> {titles[:2]}")
+        if not ok:
+            bad += 1
+        print(f"  итого: {len(checks) + 1 - bad} из {len(checks) + 1}")
+    else:
+        print(f"  итого: {len(checks) - bad} из {len(checks)} "
+              f"({tr('перевод пропущен: нет сети')})")
     return 1 if bad else 0
 
 

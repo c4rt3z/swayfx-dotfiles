@@ -4,7 +4,7 @@
 * {
     border: none;
     border-radius: 0;
-    font-family: "Ndot55Caps", "JetBrainsMono Nerd Font", monospace;
+    font-family: "JetBrainsMono Nerd Font", "Ndot55Caps", "JetBrainsMono Nerd Font", monospace;
     font-size: 13px;
     font-weight: bold;
     min-height: 0;
@@ -12,8 +12,8 @@
 
 /* --- СПЛОШНАЯ ПАНЕЛЬ НА ВСЮ ШИРИНУ (прозрачность как у терминала: 0.75) --- */
 window#waybar {
-    background: alpha(#261e18, 0.75);
-    color: #ffb783;
+    background: alpha(#212018, 0.75);
+    color: #cdca75;
     padding: 0 10px;
 }
 
@@ -32,7 +32,7 @@ window#waybar {
 #language,
 #tray {
     background: transparent;
-    color: #ffb783;
+    color: #cdca75;
     margin: 0;
     padding: 1px 14px 0;
     /* тень только на тёмном фоне: на светлой теме приходит none (см. theme-render.py) */
@@ -50,14 +50,14 @@ window#waybar {
 #language,
 #tray,
 #custom-power {
-    border-left: 1px solid alpha(#ffb783, 0.22);
+    border-left: 1px solid alpha(#cdca75, 0.22);
 }
 
 /* Название окна — в левом углу, цветом темы (акцент из палитры). Отделено от
    часов разделителем справа; когда окна нет, модуль прячется вместе с ним. */
 #custom-title {
-    color: #ffb783;
-    border-right: 1px solid alpha(#ffb783, 0.22);
+    color: #cdca75;
+    border-right: 1px solid alpha(#cdca75, 0.22);
 }
 
 /* Логотип меню приложений — самый левый модуль бара. Он крупнее прочих модулей,
@@ -67,50 +67,50 @@ window#waybar {
 #custom-logo {
     font-size: 16px;
     padding: 1px 22px 0 16px;
-    border-right: 1px solid alpha(#ffb783, 0.22);
+    border-right: 1px solid alpha(#cdca75, 0.22);
 }
 
 /* Центр занят только музыкой, закрыт с двух сторон */
 #custom-center {
-    border-right: 1px solid alpha(#ffb783, 0.22);
+    border-right: 1px solid alpha(#cdca75, 0.22);
 }
 
 /* Погода: иконка — глифом из шрифта (Nerd Font), рядом градусы. Значок
    подкрашивается по погоде: ясно — тёплым, дождь — синим, гроза — сиреневым.
    Класс приходит из scripts/weather.py вместе с текстом модуля. */
 #custom-weather {
-    border-right: 1px solid alpha(#ffb783, 0.22);
-    color: #ffb783;
+    border-right: 1px solid alpha(#cdca75, 0.22);
+    color: #cdca75;
 }
 
 #custom-weather.clear {
-    color: #c8ca94;
+    color: #a4d0bc;
 }
 
 #custom-weather.partly,
 #custom-weather.cloudy,
 #custom-weather.overcast {
-    color: #ffb783;
+    color: #cdca75;
 }
 
 #custom-weather.drizzle,
 #custom-weather.rain,
 #custom-weather.heavy {
-    color: #e4bfa7;
+    color: #cbc8a4;
 }
 
 #custom-weather.snow,
 #custom-weather.sleet {
-    color: #5b412f;
+    color: #49482d;
 }
 
 #custom-weather.thunder {
-    color: #6d390b;
+    color: #4a4900;
 }
 
 #custom-weather.fog,
 #custom-weather.wind {
-    color: #d6c3b7;
+    color: #cac7b6;
 }
 
 #custom-weather.error {
@@ -118,15 +118,15 @@ window#waybar {
 }
 
 #custom-weather:hover {
-    color: #4f2500;
-    background: #ffb783;
+    color: #333200;
+    background: #cdca75;
 }
 
 /* Кнопка меню приложений и кнопка питания: при наведении заливаются акцентом */
 #custom-logo:hover,
 #custom-power:hover {
-    color: #4f2500;
-    background: #ffb783;
+    color: #333200;
+    background: #cdca75;
 }
 
 /* Индикатор раскладки не отдаём под сжатие — эллипсис ему не нужен */
@@ -136,14 +136,14 @@ window#waybar {
 
 /* --- РАБОЧИЕ СТОЛЫ --- */
 #workspaces {
-    border-right: 1px solid alpha(#ffb783, 0.22);
+    border-right: 1px solid alpha(#cdca75, 0.22);
     padding: 0 6px;
 }
 
 #workspaces button {
     padding: 1px 6px;
     margin: 3px 1px;
-    color: alpha(#ffb783, 0.4);
+    color: alpha(#cdca75, 0.4);
     background: transparent;
     border-radius: 4px;
 }
@@ -151,14 +151,14 @@ window#waybar {
 /* ВАЖНО: hover объявлен до active/focused/urgent,
    иначе наведённая кнопка перебивает активную (кликнутый стол не подсвечивается) */
 #workspaces button:hover {
-    background: alpha(#ffb783, 0.18);
-    color: #ffb783;
+    background: alpha(#cdca75, 0.18);
+    color: #cdca75;
 }
 
 #workspaces button.focused,
 #workspaces button.active {
-    color: #4f2500;
-    background: #ffb783;
+    color: #333200;
+    background: #cdca75;
 }
 
 #workspaces button.urgent {

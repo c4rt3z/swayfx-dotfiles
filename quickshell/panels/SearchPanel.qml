@@ -115,7 +115,7 @@ ColumnLayout {
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
                 color: Colors.text
-                font.family: "JetBrains Mono"
+                font.family: Fonts.panelFamily
                 font.pixelSize: 14
                 selectionColor: Colors.accent
                 selectedTextColor: Colors.onAccent
@@ -180,6 +180,7 @@ ColumnLayout {
             required property int index
 
             readonly property bool calc: row.modelData.kind === "calc"
+                                        || row.modelData.kind === "translate"
             readonly property bool web: row.modelData.kind === "web"
 
             width: list.width

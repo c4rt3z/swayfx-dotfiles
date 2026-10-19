@@ -147,6 +147,58 @@ def from_owm(code):
     return "overcast"
 
 
+def day_row(date, category, lo, hi, today):
+    return {
+        "date": date, "icon": icon_for(category, True),
+        "desc": tr(DESCR.get(category, "Облачно")),
+        "min": int(round(lo)), "max": int(round(hi)), "today": today,
+    }
+
+
+def daily_rows(dates, codes, lows, highs):
+    """Дни из open-meteo: списки идут параллельно."""
+    out = []
+    for i, date in enumerate(dates[:5]):
+        code = int(codes[i]) if i < len(codes) and codes[i] is not None else 0
+        lo = lows[i] if i < len(lows) and lows[i] is not None else 0
+        hi = highs[i] if i < len(highs) and highs[i] is not None else 0
+        out.append(day_row(date, WMO.get(code, "cloudy"), lo, hi, i == 0))
+    return out
+
+
+def owm_days(city, units, lang, key):
+    """OpenWeather: 3-часовые точки (5 дней) сводим в сутки."""
+    try:
+        data = get_json("https://api.openweathermap.org/data/2.5/forecast?" + urllib.parse.urlencode({
+            "q": city, "appid": key, "units": "imperial" if units == "imperial" else "metric",
+            "lang": lang}))
+    except Exception:
+        return []
+    days = {}
+    for entry in data.get("list") or []:
+        day = (entry.get("dt_txt") or "")[:10]
+        if not day:
+            continue
+        main = entry.get("main") or {}
+        weather = (entry.get("weather") or [{}])[0]
+        bucket = days.setdefault(day, {"lo": None, "hi": None, "noon": None, "code": 800})
+        lo, hi = main.get("temp_min"), main.get("temp_max")
+        if lo is not None:
+            bucket["lo"] = lo if bucket["lo"] is None else min(bucket["lo"], lo)
+        if hi is not None:
+            bucket["hi"] = hi if bucket["hi"] is None else max(bucket["hi"], hi)
+        hour = int((entry.get("dt_txt") or "00:00:00")[11:13] or 0)
+        if bucket["noon"] is None or abs(hour - 12) < abs(bucket["noon"] - 12):
+            bucket["noon"] = hour
+            bucket["code"] = int(weather.get("id") or 800)
+    out = []
+    for i, day in enumerate(sorted(days)[:5]):
+        bucket = days[day]
+        out.append(day_row(day, from_owm(bucket["code"]),
+                           bucket["lo"] or 0, bucket["hi"] or 0, i == 0))
+    return out
+
+
 def icon_for(category, is_day):
     """Иконка из шрифта: ясно днём и ночью — разные значки."""
     if category == "clear":
@@ -185,7 +237,8 @@ def fetch_openmeteo(city, units, lang):
         "latitude": place["latitude"], "longitude": place["longitude"],
         "current": "temperature_2m,apparent_temperature,relative_humidity_2m,"
                    "weather_code,wind_speed_10m,is_day",
-        "daily": "sunrise,sunset", "forecast_days": 1, "timezone": "auto",
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset",
+        "forecast_days": 5, "timezone": "auto",
         "temperature_unit": "fahrenheit" if units == "imperial" else "celsius",
         "wind_speed_unit": "mph" if units == "imperial" else "ms",
     }
@@ -196,6 +249,11 @@ def fetch_openmeteo(city, units, lang):
     country = place.get("country") or ""
     extra = {"country": country, "lat": place["latitude"], "lon": place["longitude"]}
     daily = (cur.get("daily") or {})
+    extra["days"] = daily_rows(
+        daily.get("time") or [],
+        daily.get("weather_code") or [],
+        daily.get("temperature_2m_min") or [],
+        daily.get("temperature_2m_max") or [])
     sunrise = (daily.get("sunrise") or [""])[0]
     sunset = (daily.get("sunset") or [""])[0]
     if sunrise:
@@ -225,6 +283,7 @@ def fetch_openweather(city, units, lang, key):
     else:
         sunrise = sunset = ""
     extra = {"country": sysinfo.get("country") or "", "sunrise": sunrise, "sunset": sunset}
+    extra["days"] = owm_days(city, units, lang, key)
     return pack(from_owm(int(weather.get("id") or 800)), is_day,
                 main.get("temp", 0), main.get("feels_like", 0),
                 main.get("humidity", 0), wind.get("speed", 0),

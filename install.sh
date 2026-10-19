@@ -53,7 +53,8 @@ DEPS=(
 )
 
 # состояние машины, которое создаётся у каждого своё, — его не перетираем
-KEEP=("quickshell/language" "quickshell/keys-default.json" "quickshell/weather.json")
+KEEP=("quickshell/language" "quickshell/keys-default.json" "quickshell/weather.json"
+      "quickshell/fonts.json")
 
 DRY=0
 ASSUME_YES=0
