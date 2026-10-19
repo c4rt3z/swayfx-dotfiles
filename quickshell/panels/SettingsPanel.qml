@@ -27,6 +27,7 @@ ColumnLayout {
         { key: "language", name: Lang.t("Язык"), glyph: "\uf1ab", ready: true },
         { key: "apps", name: Lang.t("Приложения"), glyph: "\uf108", ready: true },
         { key: "bar", name: Lang.t("Панель"), glyph: "\uf0c9", ready: true },
+        { key: "sidebar", name: Lang.t("Сайдбар"), glyph: "\uf0db", ready: true },
         { key: "weather", name: Lang.t("Погода"), glyph: "\uf185", ready: true },
         { key: "keys", name: Lang.t("Клавиши"), glyph: "\uf11c", ready: true },
         { key: "languages", name: Lang.t("Раскладки"), glyph: "\uf0ac", ready: true },
@@ -157,8 +158,12 @@ ColumnLayout {
                         return languagePage;
                     if (panel.section === "bar")
                         return barPage;
+                    if (panel.section === "sidebar")
+                        return sidebarPage;
                     if (panel.section === "weather")
                         return weatherPage;
+                    if (panel.section === "sound")
+                        return soundPage;
                     if (panel.section === "keys")
                         return keysPage;
                     if (panel.section === "languages")
@@ -199,6 +204,16 @@ ColumnLayout {
     Component {
         id: barPage
         PanelPage {}
+    }
+
+    Component {
+        id: sidebarPage
+        SidebarPage {}
+    }
+
+    Component {
+        id: soundPage
+        SoundPage {}
     }
 
     Component {

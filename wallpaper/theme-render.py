@@ -338,6 +338,16 @@ def font_family():
     return name.replace('"', "'")
 
 
+def bar_mode():
+    """Вид бара: standard (сплошной), floating (островок), minimal (без фона)."""
+    try:
+        with open(f"{HOME}/.config/waybar/mode", encoding="utf-8") as fh:
+            mode = fh.read().strip()
+    except OSError:
+        mode = "standard"
+    return mode if mode in ("standard", "floating", "minimal") else "standard"
+
+
 def render(palette):
     for name in REQUIRED:
         if name not in palette:
@@ -354,7 +364,14 @@ def render(palette):
         else "0 1px 2px rgba(0, 0, 0, 0.55)"
     )
 
-    extra = {"font": font_family()}
+    mode = bar_mode()
+    extra = {
+        "font": font_family(),
+        # плавающий бар — скруглённый островок, минимальный — вовсе без подложки
+        "bar_radius": "11px" if mode == "floating" else "0",
+        "bar_bg": "transparent" if mode == "minimal"
+                  else f"alpha({palette['bg']}, 0.75)",
+    }
     out = {}
     for target, tpl in TPL_FILES.items():
         with open(os.path.join(TPL_DIR, tpl), encoding="utf-8") as f:

@@ -51,6 +51,16 @@ ShellRoot {
     // курсора и сразу под баром.
     property bool panelFromBar: false
 
+    // Где сейчас бар waybar (top|bottom) — виджеты и сайдбар встают с той же
+    // стороны: под баром сверху или над баром снизу. Пишет scripts/bar-panel.py.
+    property string barPosition: "top"
+
+    // Слайд-шоу: обои сами меняются раз в N минут. Таймер держим здесь
+    // (ShellRoot один на всю оболочку), а не в движке обоев — там поверхность
+    // на каждый монитор, и на двух экранах обои прыгали бы вдвое чаще.
+    // Состояние пишет wallpaper/slideshow.sh.
+    property var slideshow: ({ on: false, minutes: 15 })
+
     onActivePanelChanged: {
         if (activePanel === "emoji" || root.panelFromBar) {
             root.pointerKnown = false;
@@ -86,6 +96,62 @@ ShellRoot {
             } catch (e) {
                 root.anchor = ({});
             }
+        }
+    }
+
+    FileView {
+        id: barView
+        path: (Quickshell.env("HOME") ?? "") + "/.cache/quickshell/bar.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            let raw = typeof text === "function" ? text() : text;
+            try {
+                root.barPosition = (JSON.parse(raw || "{}").position === "bottom")
+                                   ? "bottom" : "top";
+            } catch (e) {
+                root.barPosition = "top";
+            }
+        }
+    }
+
+    FileView {
+        id: slidesView
+        path: (Quickshell.env("HOME") ?? "") + "/.config/wallpaper/slideshow.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.readSlideshow(typeof text === "function" ? text() : text)
+        onLoadFailed: root.slideshow = ({ on: false, minutes: 15 })
+    }
+
+    function readSlideshow(raw) {
+        try {
+            const data = JSON.parse((raw || "").trim() || "{}");
+            const minutes = Math.round(Number(data.minutes));
+            root.slideshow = {
+                on: data.on === true,
+                minutes: minutes > 0 ? minutes : 15
+            };
+        } catch (e) {
+            root.slideshow = ({ on: false, minutes: 15 });
+        }
+    }
+
+    Process {
+        id: slideNext
+        // следующие обои; переход берётся из настроек движка (случайный)
+        command: ["bash", (Quickshell.env("HOME") ?? "") + "/.config/wallpaper/wallpaper.sh",
+                  "next"]
+    }
+
+    Timer {
+        id: slideTimer
+        repeat: true
+        running: root.slideshow.on === true
+        interval: Math.max(1, Number(root.slideshow.minutes) || 15) * 60000
+        onTriggered: {
+            slideNext.running = false;
+            slideNext.running = true;
         }
     }
 
@@ -387,7 +453,8 @@ ShellRoot {
                     return;
                 root.pointerX = win.barAnchor ? win.screenWidth / 2
                                               : win.screenWidth - win.anchorRight;
-                root.pointerY = win.barAnchor ? 44
+                root.pointerY = win.barAnchor
+                               ? (root.barPosition === "bottom" ? win.screenHeight - 44 : 44)
                                               : win.screenHeight - win.anchorBottom;
                 root.pointerKnown = true;
             }
@@ -412,8 +479,10 @@ ShellRoot {
                : 0
             y: chrome.floating
                ? (win.barAnchor
-                  ? Math.max(8, Math.min(root.pointerY + 2,
-                                         win.screenHeight - chrome.height - 8))
+                  ? (root.barPosition === "bottom"
+                     ? Math.max(8, win.screenHeight - chrome.height - 44)
+                     : Math.max(8, Math.min(root.pointerY + 2,
+                                            win.screenHeight - chrome.height - 8)))
                   : Math.max(8, Math.min(root.pointerY + 18,
                                          win.screenHeight - chrome.height - 8)))
                : 0

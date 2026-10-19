@@ -23,12 +23,15 @@ ColumnLayout {
     readonly property string cacheDir: home + "/.cache/wallpaper"
     readonly property string indexer: home + "/.config/wallpaper/index-wallpapers.py"
     readonly property string cli: home + "/.config/wallpaper/wallpaper.sh"
+    readonly property string slideCli: home + "/.config/wallpaper/slideshow.sh"
     readonly property string themeGen: home + "/.config/wallpaper/theme-gen.sh"
 
     property var items: []
     property var recent: []
     property var schemes: [{ id: "auto", name: "Material You", accent: "" }]
     property string themeMode: "auto"
+    // слайд-шоу: состояние и интервал (wallpaper/slideshow.sh)
+    property var slideshow: ({ on: false, minutes: 15 })
     property string flavour: "universal"
     property string variant: "dark"
     // типы схем Material You (matugen): как сильно палитра следует за обоями
@@ -83,6 +86,22 @@ ColumnLayout {
     // высоту считает сам ColumnLayout: ручная формула не учитывала отступы
     // и обрезала страницу «Внешний вид» на пару десятков пикселей
 
+    function readSlideshow(raw): void {
+        try {
+            const data = JSON.parse((raw || "").trim() || "{}");
+            const minutes = Math.round(Number(data.minutes));
+            picker.slideshow = { on: data.on === true, minutes: minutes > 0 ? minutes : 15 };
+        } catch (e) {
+            picker.slideshow = ({ on: false, minutes: 15 });
+        }
+    }
+
+    function slideCommand(args): void {
+        slideProc.command = ["bash", picker.slideCli].concat(args);
+        slideProc.running = false;
+        slideProc.running = true;
+    }
+
     function baseName(p): string {
         let s = String(p || "");
         let i = s.lastIndexOf("/");
@@ -106,6 +125,7 @@ ColumnLayout {
     Component.onCompleted: {
         indexProc.running = true;
         schemesProc.running = true;
+        slideProc.running = true;
         refreshCurrent();
     }
 
@@ -518,6 +538,21 @@ ColumnLayout {
         }
     }
 
+    Process {
+        id: slideProc
+        command: ["bash", picker.slideCli, "status"]
+        stdout: StdioCollector {
+            onStreamFinished: picker.readSlideshow(text)
+        }
+    }
+
+    FileView {
+        path: picker.home + "/.config/wallpaper/slideshow.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: picker.readSlideshow(typeof text === "function" ? text() : text)
+    }
+
     Label {
         Layout.fillWidth: true
         Layout.preferredHeight: 60
@@ -586,6 +621,42 @@ ColumnLayout {
                     anchors.margins: -4
                     hoverEnabled: true
                     onClicked: Quickshell.execDetached(["bash", picker.cli, "random"])
+                }
+            }
+
+            // Слайд-шоу: щелчок включает и выключает, рядом — интервал
+            Label {
+                text: picker.slideshow.on
+                      ? Lang.t("слайд-шоу: вкл")
+                      : Lang.t("слайд-шоу: выкл")
+                color: picker.slideshow.on
+                       ? (slideHover.containsMouse ? Colors.accent : Colors.text)
+                       : (slideHover.containsMouse ? Colors.accent : Colors.dim)
+                font.pixelSize: 11
+                MouseArea {
+                    id: slideHover
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    hoverEnabled: true
+                    onClicked: picker.slideCommand(["toggle"])
+                }
+            }
+
+            Label {
+                visible: picker.slideshow.on
+                text: Lang.t("каждые ") + picker.slideshow.minutes + Lang.t(" мин")
+                color: everyHover.containsMouse ? Colors.accent : Colors.dim
+                font.pixelSize: 11
+                MouseArea {
+                    id: everyHover
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    hoverEnabled: true
+                    onClicked: {
+                        const steps = [5, 15, 30, 60, 120];
+                        const at = Math.max(0, steps.indexOf(picker.slideshow.minutes));
+                        picker.slideCommand(["interval", String(steps[(at + 1) % steps.length])]);
+                    }
                 }
             }
         }

@@ -23,12 +23,21 @@ PanelWindow {
     readonly property string home: Quickshell.env("HOME") ?? ""
     readonly property string clipScript: home + "/.config/quickshell/scripts/clipboard.py"
     readonly property string shotScript: home + "/.config/quickshell/scripts/shot.py"
+    readonly property string weatherScript: home + "/.config/quickshell/scripts/weather.py"
 
-    // Четверть экрана, но в разумных пределах: на 1366 px — 360, на 2560 — 560.
-    readonly property real preferredWidth: Math.max(360, Math.min(560, Math.round(screen.width * 0.24)))
+    // Ширина — доля экрана из настроек («Сайдбар» в меню), в разумных пределах:
+    // на 1366 px при 24% — 360, на 2560 — 560.
+    readonly property real preferredWidth: Math.max(360, Math.min(620,
+        Math.round(screen.width * Sidebar.widthPercent / 100)))
 
     property var clips: []
     property var shots: []
+    // «сейчас играет»: status|title|artist|artUrl
+    property var track: ({ title: "", artist: "", art: "", status: "" })
+    // погода для виджета: {icon, temp, desc, unit}
+    property var weather: ({})
+    // где бар waybar: панель встаёт под ним сверху или над ним снизу
+    property string barPosition: "top"
     property var powerItems: [
         { icon: "\uF023", label: Lang.t("Заблокировать"), run: "lock", confirm: false },
         { icon: "\uF007", label: Lang.t("Смена пользователя"), run: "greeter", confirm: true },
@@ -44,9 +53,89 @@ PanelWindow {
     visible: Sidebar.open
     onVisibleChanged: if (visible) refresh()
 
+    function readTrack(raw) {
+        const parts = (raw || "").split("|");
+        side.track = {
+            status: parts[0] || "",
+            title: (parts[1] || "").trim(),
+            artist: (parts[2] || "").trim(),
+            art: (parts[3] || "").trim()
+        };
+    }
+
+    function readWeather(raw) {
+        try {
+            const data = JSON.parse(raw || "{}").data || {};
+            side.weather = data && data.ok !== false ? data : ({});
+        } catch (e) {
+            side.weather = ({});
+        }
+    }
+
+    function trackSource(url) {
+        if (!url)
+            return "";
+        if (url.indexOf("file://") === 0 || url.indexOf("http") === 0)
+            return url;
+        if (url.charAt(0) === "/")
+            return "file://" + url;
+        return url;
+    }
+
+    FileView {
+        path: side.home + "/.cache/quickshell/bar.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            let raw = typeof text === "function" ? text() : text;
+            try {
+                side.barPosition = (JSON.parse(raw || "{}").position === "bottom")
+                                   ? "bottom" : "top";
+            } catch (e) {
+                side.barPosition = "top";
+            }
+        }
+    }
+
+    Process {
+        id: trackProcess
+        command: ["sh", "-c",
+            "playerctl metadata --format '{{status}}|{{title}}|{{artist}}|{{mpris:artUrl}}' 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: side.readTrack(text)
+        }
+    }
+
+    Process {
+        id: weatherProcess
+        command: ["python3", side.weatherScript, "state"]
+        stdout: StdioCollector {
+            onStreamFinished: side.readWeather(text)
+        }
+    }
+
+    // трек обновляем часто, погоду — раз в десять минут
+    Timer {
+        interval: 5000
+        repeat: true
+        running: side.visible && Sidebar.widget("now")
+        onTriggered: trackProcess.running = true
+    }
+
+    Timer {
+        interval: 600000
+        repeat: true
+        running: side.visible && Sidebar.widget("weather")
+        onTriggered: weatherProcess.running = true
+    }
+
     function refresh() {
         clipsView.reload();
         shotsProcess.running = true;
+        if (Sidebar.widget("now"))
+            trackProcess.running = true;
+        if (Sidebar.widget("weather"))
+            weatherProcess.running = true;
     }
 
     function choosePower(index) {
@@ -110,13 +199,15 @@ PanelWindow {
         busy = true;
     }
 
-    anchors.left: true
+    // сторону выбирают в настройках: слева или справа
+    anchors.left: Sidebar.side === "left"
+    anchors.right: Sidebar.side === "right"
     anchors.top: true
     anchors.bottom: true
-    anchors.right: false
-    margins.left: 8
-    margins.top: 42                        // под баром waybar
-    margins.bottom: 8
+    margins.left: Sidebar.side === "left" ? 8 : 0
+    margins.right: Sidebar.side === "right" ? 8 : 0
+    margins.top: barPosition === "bottom" ? 8 : 42     // под баром waybar
+    margins.bottom: barPosition === "bottom" ? 42 : 8
 
     exclusiveZone: -1
     focusable: true
@@ -276,8 +367,140 @@ PanelWindow {
                     width: scroller.width
                     spacing: 12
 
+                    // ── сейчас играет ─────────────────────────────────────
+                    Item {
+                        Layout.fillWidth: true
+                        visible: Sidebar.widget("now") && side.track.title !== ""
+                        implicitHeight: 46
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 8
+                            color: nowHover.containsMouse ? Colors.selected : "transparent"
+                            border.width: 1
+                            border.color: nowHover.containsMouse ? Colors.accent : Colors.divider
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 6
+                            spacing: 9
+
+                            Rectangle {
+                                implicitWidth: 34
+                                implicitHeight: 34
+                                radius: 5
+                                color: Colors.selected
+                                clip: true
+
+                                Image {
+                                    anchors.fill: parent
+                                    asynchronous: true
+                                    fillMode: Image.PreserveAspectCrop
+                                    source: side.trackSource(side.track.art)
+                                    visible: source != ""
+                                    sourceSize.width: 96
+                                }
+
+                                Label {
+                                    anchors.centerIn: parent
+                                    visible: side.trackSource(side.track.art) === ""
+                                    text: "\uf001"
+                                    color: Colors.dim
+                                    font.pixelSize: 13
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 1
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: side.track.title
+                                    color: Colors.text
+                                    font.pixelSize: 12
+                                    elide: Text.ElideRight
+                                }
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: side.track.artist
+                                    color: Colors.dim
+                                    font.pixelSize: 10
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Label {
+                                text: side.track.status === "Playing" ? "\uf04c" : "\uf04b"
+                                color: nowHover.containsMouse ? Colors.accent : Colors.muted
+                                font.pixelSize: 12
+                            }
+                        }
+
+                        MouseArea {
+                            id: nowHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "music"])
+                        }
+                    }
+
+                    // ── погода ────────────────────────────────────────────
+                    Item {
+                        Layout.fillWidth: true
+                        visible: Sidebar.widget("weather") && side.weather.icon !== undefined
+                        implicitHeight: 40
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 8
+                            color: weatherHover.containsMouse ? Colors.selected : "transparent"
+                            border.width: 1
+                            border.color: weatherHover.containsMouse ? Colors.accent : Colors.divider
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            spacing: 9
+
+                            Label {
+                                text: side.weather.icon !== undefined ? side.weather.icon : ""
+                                color: Colors.accent
+                                font.pixelSize: 17
+                            }
+
+                            Label {
+                                text: (side.weather.temp !== undefined ? side.weather.temp : "?")
+                                      + " " + (side.weather.unit || "°C")
+                                color: Colors.text
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: (side.weather.desc || "") + " · "
+                                      + (side.weather.city || "")
+                                color: Colors.dim
+                                font.pixelSize: 10
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MouseArea {
+                            id: weatherHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "weather"])
+                        }
+                    }
+
                     // ── сессия: по две плитки в ряд ────────────────────────
                     Label {
+                        visible: Sidebar.widget("session")
                         text: Lang.t("Сессия")
                         color: Colors.muted
                         font.pixelSize: 11
@@ -286,7 +509,8 @@ PanelWindow {
 
                     GridLayout {
                         Layout.fillWidth: true
-                        columns: 2
+                        visible: Sidebar.widget("session")
+                        columns: Sidebar.gridColumns
                         columnSpacing: 8
                         rowSpacing: 8
 
@@ -302,7 +526,7 @@ PanelWindow {
                                 readonly property bool armedHere: side.armed === index
 
                                 Layout.fillWidth: true
-                                implicitHeight: 46
+                                implicitHeight: Sidebar.labels ? 46 : 38
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -328,6 +552,8 @@ PanelWindow {
                                     }
 
                                     Label {
+                                        // подписи можно выключить — останутся одни значки
+                                        visible: Sidebar.labels || powerTile.armedHere
                                         Layout.alignment: Qt.AlignHCenter
                                         text: powerTile.armedHere ? Lang.t("ещё раз") : modelData.label
                                         color: powerTile.armedHere ? Colors.red
@@ -349,6 +575,7 @@ PanelWindow {
 
                     // ── скриншоты ─────────────────────────────────────────
                     Label {
+                        visible: Sidebar.widget("shots")
                         text: Lang.t("Снимки экрана")
                         color: Colors.muted
                         font.pixelSize: 11
@@ -357,6 +584,7 @@ PanelWindow {
 
                     GridLayout {
                         Layout.fillWidth: true
+                        visible: Sidebar.widget("shots")
                         columns: 2
                         columnSpacing: 8
                         rowSpacing: 8
@@ -417,7 +645,7 @@ PanelWindow {
                     // свежие снимки с действиями
                     GridLayout {
                         Layout.fillWidth: true
-                        visible: side.shots.length > 0
+                        visible: Sidebar.widget("shots") && side.shots.length > 0
                         columns: 2
                         columnSpacing: 8
                         rowSpacing: 8
@@ -501,6 +729,7 @@ PanelWindow {
                     // ── буфер обмена ──────────────────────────────────────
                     RowLayout {
                         Layout.fillWidth: true
+                        visible: Sidebar.widget("clipboard")
 
                         Label {
                             Layout.fillWidth: true
@@ -528,7 +757,7 @@ PanelWindow {
 
                     Label {
                         Layout.fillWidth: true
-                        visible: side.clips.length === 0
+                        visible: Sidebar.widget("clipboard") && side.clips.length === 0
                         text: Lang.t("Пусто: скопируйте что-нибудь — появится здесь")
                         color: Colors.dim
                         font.pixelSize: 11
@@ -537,6 +766,7 @@ PanelWindow {
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        visible: Sidebar.widget("clipboard")
                         spacing: 2
 
                         Repeater {

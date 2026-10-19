@@ -20,6 +20,8 @@ ColumnLayout {
 
     property var modules: []
     property var blur: ({ waybar: true, panels: true })
+    property string position: "top"
+    property string mode: "standard"
 
     spacing: 14
 
@@ -28,6 +30,8 @@ ColumnLayout {
             let j = JSON.parse(raw || "{}");
             page.modules = j.modules || [];
             page.blur = j.blur || { waybar: true, panels: true };
+            page.position = j.position === "bottom" ? "bottom" : "top";
+            page.mode = j.mode || "standard";
         } catch (e) {
         }
     }
@@ -42,6 +46,17 @@ ColumnLayout {
         onFileChanged: reload()
         onLoaded: page.parse(typeof text === "function" ? text() : text)
     }
+
+    readonly property var positionRows: [
+        { key: "top", name: Lang.t("Сверху"), icon: "\\uf062" },
+        { key: "bottom", name: Lang.t("Снизу"), icon: "\\uf063" }
+    ]
+
+    readonly property var modeRows: [
+        { key: "standard", name: Lang.t("Сплошной") },
+        { key: "floating", name: Lang.t("Плавающий") },
+        { key: "minimal", name: Lang.t("Без фона") }
+    ]
 
     readonly property var blurRows: [
         { key: "waybar", name: Lang.t("Панель waybar") },
@@ -101,6 +116,121 @@ ColumnLayout {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: Quickshell.execDetached([
                         "python3", page.script, "toggle", modRow.modelData.key
+                    ])
+                }
+            }
+        }
+    }
+
+    Label {
+        text: Lang.t("Положение бара")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        Repeater {
+            model: page.positionRows
+
+            delegate: Item {
+                id: posRow
+
+                required property var modelData
+
+                Layout.fillWidth: true
+                implicitHeight: 32
+
+                readonly property bool current: page.position === modelData.key
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 7
+                    color: posRow.current ? Colors.selected : "transparent"
+                    border.width: 1
+                    border.color: posRow.current ? Colors.accent
+                                : (posHover.containsMouse ? Colors.border : Colors.divider)
+                }
+
+                RowLayout {
+                    anchors.centerIn: parent
+                    spacing: 7
+
+                    Label {
+                        text: posRow.modelData.icon
+                        color: posRow.current ? Colors.accent : Colors.muted
+                        font.pixelSize: 11
+                    }
+                    Label {
+                        text: posRow.modelData.name
+                        color: posRow.current ? Colors.text : Colors.muted
+                        font.pixelSize: 12
+                    }
+                }
+
+                MouseArea {
+                    id: posHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Quickshell.execDetached([
+                        "python3", page.script, "position", posRow.modelData.key
+                    ])
+                }
+            }
+        }
+    }
+
+    Label {
+        text: Lang.t("Вид бара")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        Repeater {
+            model: page.modeRows
+
+            delegate: Item {
+                id: modeRow
+
+                required property var modelData
+
+                Layout.fillWidth: true
+                implicitHeight: 32
+
+                readonly property bool current: page.mode === modelData.key
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 7
+                    color: modeRow.current ? Colors.selected : "transparent"
+                    border.width: 1
+                    border.color: modeRow.current ? Colors.accent
+                                : (modeHover.containsMouse ? Colors.border : Colors.divider)
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    text: modeRow.modelData.name
+                    color: modeRow.current ? Colors.text : Colors.muted
+                    font.pixelSize: 12
+                }
+
+                MouseArea {
+                    id: modeHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Quickshell.execDetached([
+                        "python3", page.script, "mode", modeRow.modelData.key
                     ])
                 }
             }

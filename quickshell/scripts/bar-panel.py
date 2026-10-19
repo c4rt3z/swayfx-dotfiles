@@ -4,6 +4,8 @@
     bar-panel.py build              — пересобрать ~/.cache/quickshell/bar.json
     bar-panel.py toggle <модуль>    — включить/выключить модуль бара
     bar-panel.py blur <waybar|panels> — включить/выключить размытие
+    bar-panel.py position top|bottom  — бар сверху или снизу
+    bar-panel.py mode standard|floating|minimal — вид бара
 
 Своего состояния не держим: модули живут прямо в ~/.config/waybar/config
 (списки modules-left/center/right), размытие — в блоках layer_effects
@@ -21,6 +23,7 @@ HOME = os.path.expanduser("~")
 BAR = f"{HOME}/.config/waybar/config"
 SWAY = f"{HOME}/.config/sway/config"
 STATE = f"{HOME}/.cache/quickshell/bar.json"
+MODE = f"{HOME}/.config/waybar/mode"
 
 # модуль -> (зона, подпись). Порядок здесь же задаёт порядок в баре.
 MODULES = [
@@ -44,6 +47,55 @@ ZONES = ("left", "center", "right")
 def load_bar():
     with open(BAR, encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def save_bar(cfg):
+    with open(BAR, "w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+
+
+def bar_mode():
+    """standard — сплошной, floating — островок, minimal — без подложки."""
+    try:
+        with open(MODE, encoding="utf-8") as fh:
+            mode = fh.read().strip()
+    except OSError:
+        mode = "standard"
+    return mode if mode in ("standard", "floating", "minimal") else "standard"
+
+
+def bar_position():
+    try:
+        return load_bar().get("position", "top")
+    except Exception:
+        return "top"
+
+
+def margins_for(mode, position):
+    """Плавающий бар не прилипает к краям."""
+    if mode == "floating":
+        return {"margin-left": 8, "margin-right": 8,
+                "margin-top": 6 if position == "top" else 0,
+                "margin-bottom": 6 if position == "bottom" else 0}
+    return {"margin-left": 0, "margin-right": 0,
+            "margin-top": 0, "margin-bottom": 0}
+
+
+def reload_waybar():
+    subprocess.run(["pkill", "-SIGUSR2", "-x", "waybar"], check=False)
+
+
+def rebuild_css():
+    """Пересобрать style.css: вид бара — это CSS (фон и радиус)."""
+    mode = "auto"
+    try:
+        with open(f"{HOME}/.cache/wallpaper/theme_mode", encoding="utf-8") as fh:
+            mode = fh.read().strip() or "auto"
+    except OSError:
+        pass
+    subprocess.run([f"{HOME}/.config/wallpaper/theme-gen.sh", "--mode", mode],
+                   check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def enabled():
@@ -78,7 +130,8 @@ def write_state():
     for key, zone in on.items():  # чужие модули (допишу сам) тоже показываем
         if not any(k == key for k, _z, _n in MODULES):
             items.append({"key": key, "zone": zone, "name": key, "on": True})
-    state = {"modules": items, "blur": blur_state()}
+    state = {"modules": items, "blur": blur_state(),
+             "position": bar_position(), "mode": bar_mode()}
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
     with open(STATE, "w", encoding="utf-8") as fh:
         json.dump(state, fh, ensure_ascii=False, indent=1)
@@ -101,6 +154,30 @@ def toggle(key):
         json.dump(cfg, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
     subprocess.run(["pkill", "-SIGUSR2", "-x", "waybar"], check=False)
+
+
+def set_position(position):
+    cfg = load_bar()
+    cfg["position"] = "bottom" if position == "bottom" else "top"
+    cfg.update(margins_for(bar_mode(), cfg["position"]))
+    save_bar(cfg)
+    reload_waybar()
+    write_state()
+
+
+def set_mode(mode):
+    if mode not in ("standard", "floating", "minimal"):
+        return 1
+    os.makedirs(os.path.dirname(MODE), exist_ok=True)
+    with open(MODE, "w", encoding="utf-8") as fh:
+        fh.write(mode + "\n")
+    cfg = load_bar()
+    cfg.update(margins_for(mode, cfg.get("position", "top")))
+    save_bar(cfg)
+    rebuild_css()
+    reload_waybar()
+    write_state()
+    return 0
 
 
 def toggle_blur(which):
@@ -132,6 +209,13 @@ def main(argv):
         toggle(argv[1])
         write_state()
         return 0
+    if argv[0] == "position" and len(argv) > 1:
+        set_position(argv[1])
+        return 0
+
+    if argv[0] == "mode" and len(argv) > 1:
+        return set_mode(argv[1])
+
     if argv[0] == "blur" and len(argv) > 1:
         toggle_blur(argv[1])
         write_state()

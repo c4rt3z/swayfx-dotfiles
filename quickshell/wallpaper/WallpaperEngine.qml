@@ -120,6 +120,20 @@ ShellRoot {
                 property string pendingTrans: ""
                 property bool pendingImmediate: false
 
+                // Параллакс: обои чуть сдвигаются за курсором. События приходят,
+                // пока указатель над рабочим столом (окна и бар их перекрывают),
+                // поэтому сдвиг мягкий и сам возвращается в центр.
+                property real parallaxX: 0
+                property real parallaxY: 0
+                readonly property real parallaxMax: 14
+
+                Behavior on parallaxX {
+                    NumberAnimation { duration: 450; easing.type: Easing.OutCubic }
+                }
+                Behavior on parallaxY {
+                    NumberAnimation { duration: 450; easing.type: Easing.OutCubic }
+                }
+
                 // радиус круга, который накрывает весь экран из точки перехода
                 readonly property real circleRadius: {
                     let w = width;
@@ -457,6 +471,29 @@ ShellRoot {
                     id: scene
                     anchors.fill: parent
                     clip: true
+                    // запас под сдвиг: параллакс не оголяет края
+                    scale: 1.05
+                    transform: Translate {
+                        x: win.parallaxX
+                        y: win.parallaxY
+                    }
+
+                    MouseArea {
+                        id: parallaxWatch
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                        onPositionChanged: {
+                            const w = Math.max(1, win.width);
+                            const h = Math.max(1, win.height);
+                            win.parallaxX = (0.5 - mouse.x / w) * win.parallaxMax * 2;
+                            win.parallaxY = (0.5 - mouse.y / h) * win.parallaxMax * 1.4;
+                        }
+                        onExited: {
+                            win.parallaxX = 0;
+                            win.parallaxY = 0;
+                        }
+                    }
 
                     // --- слой A ---
                     Item {

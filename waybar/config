@@ -5,7 +5,6 @@
   "spacing": 0,
   "modules-left": [
     "custom/logo",
-    "custom/weather",
     "custom/title",
     "custom/clock",
     "sway/workspaces"
@@ -17,8 +16,8 @@
     "network",
     "memory",
     "battery",
-  "backlight",
-  "pulseaudio",
+    "backlight",
+    "pulseaudio",
     "sway/language",
     "tray",
     "custom/power"
@@ -134,5 +133,9 @@
     "interval": 60,
     "tooltip": false,
     "on-click": "qs ipc call panel bar power"
-  }
+  },
+  "margin-left": 8,
+  "margin-right": 8,
+  "margin-top": 6,
+  "margin-bottom": 0
 }

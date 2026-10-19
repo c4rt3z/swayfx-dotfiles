@@ -50,11 +50,13 @@ DEPS=(
     "ffmpeg:ffmpeg"
     "gsettings:glib2"
     "notify-send:libnotify"
+    "easyeffects:easyeffects"      # эквалайзер и пресеты звука (раздел «Звук»)
 )
 
 # состояние машины, которое создаётся у каждого своё, — его не перетираем
 KEEP=("quickshell/language" "quickshell/keys-default.json" "quickshell/weather.json"
-      "quickshell/fonts.json")
+      "quickshell/fonts.json" "quickshell/sidebar.json" "wallpaper/slideshow.json"
+      "waybar/mode")
 
 DRY=0
 ASSUME_YES=0

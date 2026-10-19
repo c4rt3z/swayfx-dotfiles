@@ -41,6 +41,12 @@ quickshell/weather.json
 quickshell/fonts.json
 # флаг «автоблокировка по простою выключена» (тумблер в панели батареи)
 quickshell/no-auto-lock
+# настройки сайдбара (сторона, ширина, виджеты) — свои у каждого
+quickshell/sidebar.json
+# слайд-шоу и его интервал
+wallpaper/slideshow.json
+# вид бара: сплошной, плавающий или без фона
+waybar/mode
 
 # сторонние темы alacritty — отдельный репозиторий, ставится клоном
 # (см. README: ~/.config/alacritty/themes)

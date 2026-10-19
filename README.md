@@ -55,7 +55,8 @@ Material You rebuilds the whole palette from every wallpaper, and animated GIF w
 * helpers the config calls: `wofi`, `grim`, `slurp`, `wl-clipboard`, `tesseract` (optional —
   text recognition for screenshots), `brightnessctl`,
   `playerctl`, `wireplumber` (wpctl), `xdg-utils` (xdg-mime), `matugen`, `ffmpeg`,
-  `gsettings` (glib2), `swayidle`, `swaylock-effects` (fallback lock)
+  `gsettings` (glib2), `swayidle`, `swaylock-effects` (fallback lock),
+  `easyeffects` (sound equalizer and presets)
 * `plasma-apply-colorscheme` (plasma-workspace) — only to recolor KDE apps
 * optional: [alacritty-theme](https://github.com/alacritty/alacritty-theme) —
   `git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes`
@@ -228,7 +229,9 @@ data. The city is searched there too, units are °C/°F.
 Weather and time are separate: clicking the temperature opens **weather**,
 clicking the clock opens **calendar with the timer**. Weather shows the current
 conditions plus a five-day forecast (icon, description, min and max) — click the
-weather module in the bar or `qs ipc call panel toggle weather`.
+weather module in the bar or `qs ipc call panel bar weather`. Every widget opened
+from waybar lands exactly under its own button (the shell takes its position from
+the cursor), or above it when the bar sits at the bottom.
 
 **Calendar and timer** — click the clock in the bar (or `Super+C`): a month with
 today highlighted and a timer. Presets from 1 to 45 minutes plus a field for your
@@ -251,13 +254,30 @@ font must carry Nerd Font icons, otherwise glyphs turn into squares. Stored in
 
 **Notifications** — quickshell’s own toasts: the shell is the
 `org.freedesktop.Notifications` daemon itself, so dunst or swaync are not needed.
-Cards appear under the bar on the right, fade after five seconds (or whatever the
-app asks for), important ones stay until dismissed, hovering pauses the timer,
-and app-provided buttons (“Open”, “Reply”) are shown too.
+Cards appear under the bar on the right (the background behind the card is
+blurred), fade after five seconds (or whatever the app asks for), important ones
+stay until dismissed, hovering pauses the timer, and app-provided buttons
+(“Open”, “Reply”) are shown too.
 
-**Deep links to settings**: `qs ipc call settings open weather` opens the
-settings right on that section (home, appearance, language, apps, bar, weather,
-keys, languages, defaults, services).
+**Sound** — `Super+,` → “Sound”: volume and mute, output device, sound card
+profiles (analog stereo, headphones, pro audio) and the equalizer. The equalizer
+is not ours: the page drives EasyEffects — it starts and stops its service
+(`easyeffects --service-mode`), toggles the effects bypass and loads presets from
+`~/.local/share/easyeffects/output`. When there are no presets, the page offers
+to open EasyEffects and add them there (the community keeps ready-made sets, for
+example `github.com/M0Rf30/easyeffects-presets`). All of it is done by
+`quickshell/scripts/audio.py`, which also works from the terminal:
+`audio.py sink <device>`, `audio.py preset <name>`, `audio.py bypass on`.
+
+**The bar (waybar)** is configured in the same place, under “Bar”: modules and
+their zones, position (top or bottom), look — solid, a rounded floating island,
+or no background at all — and blur. The look is stored in `~/.config/waybar/mode`,
+the position and margins in `~/.config/waybar/config`; the quickshell panels and
+the sidebar keep to the same side as the bar.
+
+**Deep links to settings**: `qs ipc call settings open sound` opens the
+settings right on that section (home, appearance, language, apps, bar, sidebar,
+weather, sound, keys, languages, defaults, services).
 
 ## Key bindings
 

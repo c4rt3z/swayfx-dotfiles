@@ -12,9 +12,11 @@
 
 /* --- СПЛОШНАЯ ПАНЕЛЬ НА ВСЮ ШИРИНУ (прозрачность как у терминала: 0.75) --- */
 window#waybar {
-    background: alpha(#212018, 0.75);
-    color: #cdca75;
+    /* вид бара — в настройках: сплошной, плавающий (островок) или без фона */
+    background: alpha(#1d2024, 0.75);
+    color: #a9c7ff;
     padding: 0 10px;
+    border-radius: 11px;
 }
 
 /* Модули — части одной полосы: без подложек, рамок и зазоров */
@@ -32,7 +34,7 @@ window#waybar {
 #language,
 #tray {
     background: transparent;
-    color: #cdca75;
+    color: #a9c7ff;
     margin: 0;
     padding: 1px 14px 0;
     /* тень только на тёмном фоне: на светлой теме приходит none (см. theme-render.py) */
@@ -50,14 +52,14 @@ window#waybar {
 #language,
 #tray,
 #custom-power {
-    border-left: 1px solid alpha(#cdca75, 0.22);
+    border-left: 1px solid alpha(#a9c7ff, 0.22);
 }
 
 /* Название окна — в левом углу, цветом темы (акцент из палитры). Отделено от
    часов разделителем справа; когда окна нет, модуль прячется вместе с ним. */
 #custom-title {
-    color: #cdca75;
-    border-right: 1px solid alpha(#cdca75, 0.22);
+    color: #a9c7ff;
+    border-right: 1px solid alpha(#a9c7ff, 0.22);
 }
 
 /* Логотип меню приложений — самый левый модуль бара. Он крупнее прочих модулей,
@@ -67,50 +69,50 @@ window#waybar {
 #custom-logo {
     font-size: 16px;
     padding: 1px 22px 0 16px;
-    border-right: 1px solid alpha(#cdca75, 0.22);
+    border-right: 1px solid alpha(#a9c7ff, 0.22);
 }
 
 /* Центр занят только музыкой, закрыт с двух сторон */
 #custom-center {
-    border-right: 1px solid alpha(#cdca75, 0.22);
+    border-right: 1px solid alpha(#a9c7ff, 0.22);
 }
 
 /* Погода: иконка — глифом из шрифта (Nerd Font), рядом градусы. Значок
    подкрашивается по погоде: ясно — тёплым, дождь — синим, гроза — сиреневым.
    Класс приходит из scripts/weather.py вместе с текстом модуля. */
 #custom-weather {
-    border-right: 1px solid alpha(#cdca75, 0.22);
-    color: #cdca75;
+    border-right: 1px solid alpha(#a9c7ff, 0.22);
+    color: #a9c7ff;
 }
 
 #custom-weather.clear {
-    color: #a4d0bc;
+    color: #dcbce1;
 }
 
 #custom-weather.partly,
 #custom-weather.cloudy,
 #custom-weather.overcast {
-    color: #cdca75;
+    color: #a9c7ff;
 }
 
 #custom-weather.drizzle,
 #custom-weather.rain,
 #custom-weather.heavy {
-    color: #cbc8a4;
+    color: #bdc7dc;
 }
 
 #custom-weather.snow,
 #custom-weather.sleet {
-    color: #49482d;
+    color: #3e4758;
 }
 
 #custom-weather.thunder {
-    color: #4a4900;
+    color: #264777;
 }
 
 #custom-weather.fog,
 #custom-weather.wind {
-    color: #cac7b6;
+    color: #c4c6cf;
 }
 
 #custom-weather.error {
@@ -118,15 +120,15 @@ window#waybar {
 }
 
 #custom-weather:hover {
-    color: #333200;
-    background: #cdca75;
+    color: #08305f;
+    background: #a9c7ff;
 }
 
 /* Кнопка меню приложений и кнопка питания: при наведении заливаются акцентом */
 #custom-logo:hover,
 #custom-power:hover {
-    color: #333200;
-    background: #cdca75;
+    color: #08305f;
+    background: #a9c7ff;
 }
 
 /* Индикатор раскладки не отдаём под сжатие — эллипсис ему не нужен */
@@ -136,14 +138,14 @@ window#waybar {
 
 /* --- РАБОЧИЕ СТОЛЫ --- */
 #workspaces {
-    border-right: 1px solid alpha(#cdca75, 0.22);
+    border-right: 1px solid alpha(#a9c7ff, 0.22);
     padding: 0 6px;
 }
 
 #workspaces button {
     padding: 1px 6px;
     margin: 3px 1px;
-    color: alpha(#cdca75, 0.4);
+    color: alpha(#a9c7ff, 0.4);
     background: transparent;
     border-radius: 4px;
 }
@@ -151,14 +153,14 @@ window#waybar {
 /* ВАЖНО: hover объявлен до active/focused/urgent,
    иначе наведённая кнопка перебивает активную (кликнутый стол не подсвечивается) */
 #workspaces button:hover {
-    background: alpha(#cdca75, 0.18);
-    color: #cdca75;
+    background: alpha(#a9c7ff, 0.18);
+    color: #a9c7ff;
 }
 
 #workspaces button.focused,
 #workspaces button.active {
-    color: #333200;
-    background: #cdca75;
+    color: #08305f;
+    background: #a9c7ff;
 }
 
 #workspaces button.urgent {
