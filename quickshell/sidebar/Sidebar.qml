@@ -371,14 +371,16 @@ PanelWindow {
                     spacing: 12
 
                     // ── сейчас играет ─────────────────────────────────────
+                    // Обложка крупнее, название — полужирным, справа кнопка
+                    // паузы: ею можно остановить трек, не открывая плеер.
                     Item {
                         Layout.fillWidth: true
                         visible: Sidebar.widget("now") && side.track.title !== ""
-                        implicitHeight: 46
+                        implicitHeight: 62
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 8
+                            radius: 10
                             color: nowHover.containsMouse ? Colors.selected : "transparent"
                             border.width: 1
                             border.color: nowHover.containsMouse ? Colors.accent : Colors.divider
@@ -386,15 +388,17 @@ PanelWindow {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 6
-                            spacing: 9
+                            anchors.margins: 7
+                            spacing: 10
 
                             Rectangle {
-                                implicitWidth: 34
-                                implicitHeight: 34
-                                radius: 5
+                                implicitWidth: 46
+                                implicitHeight: 46
+                                radius: 7
                                 color: Colors.selected
                                 clip: true
+                                border.width: 1
+                                border.color: Colors.divider
 
                                 Image {
                                     anchors.fill: parent
@@ -402,7 +406,7 @@ PanelWindow {
                                     fillMode: Image.PreserveAspectCrop
                                     source: side.trackSource(side.track.art)
                                     visible: source != ""
-                                    sourceSize.width: 96
+                                    sourceSize.width: 128
                                 }
 
                                 Label {
@@ -410,35 +414,59 @@ PanelWindow {
                                     visible: side.trackSource(side.track.art) === ""
                                     text: "\uf001"
                                     color: Colors.dim
-                                    font.pixelSize: 13
+                                    font.pixelSize: 16
                                 }
                             }
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 1
+                                spacing: 2
 
                                 Label {
                                     Layout.fillWidth: true
                                     text: side.track.title
                                     color: Colors.text
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
+                                    font.bold: true
                                     elide: Text.ElideRight
                                 }
 
                                 Label {
                                     Layout.fillWidth: true
-                                    text: side.track.artist
+                                    text: side.track.artist !== ""
+                                          ? side.track.artist : Lang.t("Неизвестный исполнитель")
                                     color: Colors.dim
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     elide: Text.ElideRight
                                 }
                             }
 
-                            Label {
-                                text: side.track.status === "Playing" ? "\uf04c" : "\uf04b"
-                                color: nowHover.containsMouse ? Colors.accent : Colors.muted
-                                font.pixelSize: 12
+                            // пауза/воспроизведение — отдельная кнопка поверх
+                            // общей области клика (иначе открывался бы плеер)
+                            Item {
+                                implicitWidth: 26
+                                implicitHeight: 26
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 6
+                                    color: playHover.containsMouse ? Colors.accent : "transparent"
+                                }
+
+                                Label {
+                                    anchors.centerIn: parent
+                                    text: side.track.status === "Playing" ? "\uf04b" : "\uf04c"
+                                    color: playHover.containsMouse ? Colors.on_accent : Colors.muted
+                                    font.pixelSize: 12
+                                }
+
+                                MouseArea {
+                                    id: playHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Quickshell.execDetached(["playerctl", "play-pause"])
+                                }
                             }
                         }
 
@@ -451,14 +479,16 @@ PanelWindow {
                     }
 
                     // ── погода ────────────────────────────────────────────
+                    // Крупная иконка, температура — полужирным, ниже город,
+                    // «ощущается» и ветер.
                     Item {
                         Layout.fillWidth: true
                         visible: Sidebar.widget("weather") && side.weather.icon !== undefined
-                        implicitHeight: 40
+                        implicitHeight: 62
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 8
+                            radius: 10
                             color: weatherHover.containsMouse ? Colors.selected : "transparent"
                             border.width: 1
                             border.color: weatherHover.containsMouse ? Colors.accent : Colors.divider
@@ -466,30 +496,57 @@ PanelWindow {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 8
-                            spacing: 9
+                            anchors.margins: 9
+                            spacing: 12
 
                             Label {
                                 text: side.weather.icon !== undefined ? side.weather.icon : ""
                                 color: Colors.accent
-                                font.pixelSize: 17
+                                font.pixelSize: 28
                             }
 
-                            Label {
-                                text: (side.weather.temp !== undefined ? side.weather.temp : "?")
-                                      + " " + (side.weather.unit || "°C")
-                                color: Colors.text
-                                font.pixelSize: 14
-                                font.bold: true
-                            }
-
-                            Label {
+                            ColumnLayout {
                                 Layout.fillWidth: true
-                                text: (side.weather.desc || "") + " · "
-                                      + (side.weather.city || "")
-                                color: Colors.dim
-                                font.pixelSize: 10
-                                elide: Text.ElideRight
+                                spacing: 1
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Label {
+                                        text: (side.weather.temp !== undefined ? side.weather.temp : "?")
+                                              + " " + (side.weather.unit || "°C")
+                                        color: Colors.text
+                                        font.pixelSize: 20
+                                        font.bold: true
+                                    }
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: side.weather.desc || ""
+                                        color: Colors.dim
+                                        font.pixelSize: 12
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: {
+                                        const bits = [];
+                                        if (side.weather.city)
+                                            bits.push(side.weather.city);
+                                        if (side.weather.feels !== undefined)
+                                            bits.push(Lang.t("ощущается ") + side.weather.feels + "°");
+                                        if (side.weather.wind !== undefined)
+                                            bits.push(Lang.t("ветер ") + side.weather.wind
+                                                      + " " + (side.weather.wind_unit || "м/с"));
+                                        return bits.join(" · ");
+                                    }
+                                    color: Qt.alpha(Colors.dim, 0.85)
+                                    font.pixelSize: 10
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
 
@@ -702,9 +759,11 @@ PanelWindow {
                                     }
 
                                     Repeater {
+                                        // распознавание текста из снимков убрали:
+                                        // в сайдбаре оно только мешало, а текст
+                                        // всё равно уходил в буфер обмена
                                         model: [
                                             { icon: "\uF0C5", act: "copy", tip: "копировать" },
-                                            { icon: "\uF031", act: "ocr", tip: "распознать" },
                                             { icon: "\uF08E", act: "open", tip: "открыть" },
                                             { icon: "\uF1F8", act: "remove", tip: "удалить" }
                                         ]

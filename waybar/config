@@ -5,6 +5,7 @@
   "spacing": 0,
   "modules-left": [
     "custom/logo",
+    "custom/weather",
     "custom/title",
     "custom/clock",
     "sway/workspaces"

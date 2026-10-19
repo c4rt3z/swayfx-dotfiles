@@ -312,6 +312,16 @@ ColumnLayout {
         }
     }
 
+    Label {
+        Layout.fillWidth: true
+        visible: page.state.ee && page.state.ee.service === true
+        text: Lang.t("Пока работает служба EasyEffects, выбери устройством вывода "
+                     + "«Easy Effects Sink» — иначе эффекты не слышны.")
+        font.pixelSize: 10
+        color: Colors.dim
+        wrapMode: Text.WordWrap
+    }
+
     // ── профили звуковой карты ──────────────────────────────────────────────
     Label {
         Layout.fillWidth: true

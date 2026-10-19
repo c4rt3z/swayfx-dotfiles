@@ -230,14 +230,16 @@ buttons keep their labels, whether tiles come 2×3 or 3×2, and which blocks are
 enabled — weather, “now playing”, session, shots, clipboard. The settings live in
 `~/.config/quickshell/sidebar.json` and apply on the spot.
 
-At the top it shows **weather** (icon, temperature, description, city; a click
-opens the weather panel) and **“now playing”** — cover, title and artist; a click
-opens the player. Then come the blocks:
+At the top it shows **weather** (a large icon, the temperature, the description,
+and below it the city, the “feels like” value and the wind; a click opens the
+weather panel) and **“now playing”** — cover, title, artist and a pause button
+(it stops the track without opening the player; a click on the card itself opens
+the player). Then come the blocks:
 
 * **session** — tiles two per row: lock, switch user, suspend, log out, reboot
   and power off. Dangerous actions ask for a second click;
 * **screenshots** — four buttons (region, window, whole screen, in three
-  seconds) and a strip of recent shots: copy, recognise text, open, delete;
+  seconds) and a strip of recent shots: copy, open, delete;
 * **clipboard** — history of text and images. No extra package needed:
   `wl-paste --watch` feeds `quickshell/scripts/clipboard.py`, which keeps the
   history. A copied screenshot lands here too. The cross next to an entry removes
@@ -299,7 +301,16 @@ example `github.com/M0Rf30/easyeffects-presets`). All of it is done by
 their zones, position (top or bottom), look — solid, a rounded floating island,
 or no background at all — and blur. The look is stored in `~/.config/waybar/mode`,
 the position and margins in `~/.config/waybar/config`; the quickshell panels and
-the sidebar keep to the same side as the bar.
+the sidebar keep to the same side as the bar. In floating mode the island is
+rounded at both ends, and the edge modules are rounded with it, so a hovered
+background never sticks out of the curve.
+
+**A widget opened from the bar** lands exactly under the middle of the button you
+clicked, not “wherever the pointer happened to be”: the shell takes a picture of
+the bar strip (`quickshell/scripts/bar-geometry.py`), finds the “icon + label”
+blocks in it and picks the one nearest the click. The panel always stays under
+the bar (or above it when the bar sits at the bottom) and never covers the bar
+itself.
 
 **Deep links to settings**: `qs ipc call settings open sound` opens the
 settings right on that section (home, appearance, language, apps, bar, sidebar,

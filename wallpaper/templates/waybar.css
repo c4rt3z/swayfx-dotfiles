@@ -70,6 +70,10 @@ window#waybar {
     font-size: 16px;
     padding: 1px 22px 0 16px;
     border-right: 1px solid alpha({{accent}}, 0.22);
+    /* в плавающем режиме край островка скруглён — подложка крайнего модуля
+       (например, при наведении) не должна вылезать за скругление */
+    border-top-left-radius: {{bar_radius}};
+    border-bottom-left-radius: {{bar_radius}};
 }
 
 /* Центр занят только музыкой, закрыт с двух сторон */
@@ -129,6 +133,12 @@ window#waybar {
 #custom-power:hover {
     color: {{on_accent}};
     background: {{accent}};
+}
+
+/* Правый край островка — тоже скруглён */
+#custom-power {
+    border-top-right-radius: {{bar_radius}};
+    border-bottom-right-radius: {{bar_radius}};
 }
 
 /* Индикатор раскладки не отдаём под сжатие — эллипсис ему не нужен */

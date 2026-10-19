@@ -28,6 +28,7 @@ MODE = f"{HOME}/.config/waybar/mode"
 # модуль -> (зона, подпись). Порядок здесь же задаёт порядок в баре.
 MODULES = [
     ("custom/logo", "left", tr("Логотип")),
+    ("custom/weather", "left", tr("Погода")),
     ("custom/title", "left", tr("Заголовок окна")),
     ("custom/clock", "left", tr("Часы")),
     ("sway/workspaces", "left", tr("Рабочие столы")),
@@ -86,8 +87,49 @@ def reload_waybar():
     subprocess.run(["pkill", "-SIGUSR2", "-x", "waybar"], check=False)
 
 
+CSS = f"{HOME}/.config/waybar/style.css"
+
+
+def patch_css(mode):
+    """Поправить вид бара прямо в style.css.
+
+    Вид бара — это фон и скругление в CSS. Пересобирать всю тему ради двух
+    строк смысла нет (matugen считает палитру заново и может не сойтись), так
+    что меняем только нужные строки, а если файла нет — просим theme-gen.
+    """
+    try:
+        with open(CSS, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return False
+    block = re.search(r"(window#waybar\s*\{)(.*?)(\})", text, re.S)
+    if not block:
+        return False
+    body = block.group(2)
+    color = re.search(r"background:\s*([^;]+);", body)
+    color = color.group(1).strip() if color else "alpha(#000000, 0.75)"
+    if mode == "minimal":
+        color = "transparent"
+    radius = "14px" if mode == "floating" else "0"
+    if re.search(r"background:[^;]+;", body):
+        body = re.sub(r"background:[^;]+;", f"background: {color};", body, count=1)
+    else:
+        body = f"\n    background: {color};" + body
+    if re.search(r"border-radius:[^;]+;", body):
+        body = re.sub(r"border-radius:[^;]+;", f"border-radius: {radius};", body, count=1)
+    else:
+        body += f"\n    border-radius: {radius};"
+    text = text[:block.start(2)] + body + text[block.end(2):]
+    try:
+        with open(CSS, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    except OSError:
+        return False
+    return True
+
+
 def rebuild_css():
-    """Пересобрать style.css: вид бара — это CSS (фон и радиус)."""
+    """Пересобрать style.css целиком: вид бара — это CSS (фон и радиус)."""
     mode = "auto"
     try:
         with open(f"{HOME}/.cache/wallpaper/theme_mode", encoding="utf-8") as fh:
@@ -174,7 +216,8 @@ def set_mode(mode):
     cfg = load_bar()
     cfg.update(margins_for(mode, cfg.get("position", "top")))
     save_bar(cfg)
-    rebuild_css()
+    if not patch_css(mode):
+        rebuild_css()
     reload_waybar()
     write_state()
     return 0

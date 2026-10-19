@@ -51,6 +51,13 @@ ShellRoot {
     // курсора и сразу под баром.
     property bool panelFromBar: false
 
+    // Настоящая середина кнопки бара, по которой кликнули. Курсор для этого
+    // не годится: человек нажимает не в середину, а мышь к тому же успевает
+    // уехать. Считаем по снимку полосы (scripts/bar-geometry.py): он находит
+    // блоки «ink» — иконки с подписями — и отдаёт центр ближайшего к клику.
+    property real barCenterX: 0
+    property bool barCenterReady: false
+
     // Где сейчас бар waybar (top|bottom) — виджеты и сайдбар встают с той же
     // стороны: под баром сверху или над баром снизу. Пишет scripts/bar-panel.py.
     property string barPosition: "top"
@@ -70,13 +77,34 @@ ShellRoot {
             root.panelFromBar = false;
     }
 
+    // Толчок курсора: пока координаты не пойманы, подталкиваем мышь на пиксель
+    // туда-обратно — sway отдаёт координаты только при движении.
     Timer {
         id: nudgeCursor
-        interval: 90
-        repeat: false
+        interval: 70
+        repeat: true
+        running: root.panelFromBar && !root.pointerHit && root.activePanel !== ""
         onTriggered: Quickshell.execDetached(["sh", "-c",
             "swaymsg 'seat - cursor move 1 0' >/dev/null 2>&1; " +
-            "sleep 0.12; swaymsg 'seat - cursor move -1 0' >/dev/null 2>&1"])
+            "sleep 0.04; swaymsg 'seat - cursor move -1 0' >/dev/null 2>&1"])
+    }
+
+    // Геометрия бара: по координатам клика ищем середину кнопки
+    Process {
+        id: barGeom
+        command: ["python3", (Quickshell.env("HOME") ?? "")
+                  + "/.config/quickshell/scripts/bar-geometry.py",
+                  String(Math.round(root.pointerX))]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const value = parseFloat(String(text || "").trim());
+                if (!isNaN(value) && value > 0) {
+                    root.barCenterX = value;
+                    root.barCenterReady = true;
+                }
+                root.pointerKnown = true;
+            }
+        }
     }
 
     // Куда ставить выбор эмодзи, если позиция курсора неизвестна: прямоугольник
@@ -169,12 +197,13 @@ ShellRoot {
         // виджет бара: qs ipc call panel bar volume — встанет под своей кнопкой
         function bar(name: string): void {
             root.panelFromBar = true;
+            root.barCenterReady = false;
             root.activePanel = name;
-            // sway не шлёт pointer-enter новой поверхности, пока мышь не
-            // двинется, а после щелчка по бару она стоит. Сдвигаем курсор на
-            // пиксель и возвращаем: полноэкранная поверхность получает
-            // координаты, карточка встаёт по центру кнопки.
-            nudgeCursor.restart();
+            // курсор сдвигает таймер nudgeCursor: sway не шлёт pointer-enter
+            // новой поверхности, пока мышь не двинется, а после щелчка по
+            // бару она стоит. Сдвигаем на пиксель и возвращаем: поверхность
+            // получает координаты клика, по ним bar-geometry.py находит
+            // середину кнопки.
         }
         function close(): void {
             root.panelFromBar = false;
@@ -425,7 +454,12 @@ ShellRoot {
                 root.pointerX = pointerWatch.mouseX;
                 root.pointerY = pointerWatch.mouseY;
                 root.pointerHit = true;
-                root.pointerKnown = true;
+                // для виджета бара координаты клика — только вход: по ним
+                // bar-geometry.py находит середину самой кнопки
+                if (win.barAnchor)
+                    barGeom.running = false, barGeom.running = true;
+                else
+                    root.pointerKnown = true;
             }
 
             onEntered: note()
@@ -456,6 +490,11 @@ ShellRoot {
                 root.pointerY = win.barAnchor
                                ? (root.barPosition === "bottom" ? win.screenHeight - 44 : 44)
                                               : win.screenHeight - win.anchorBottom;
+                // для виджета бара позицию считает bar-geometry.py; если он не
+                // справился, встаём по центру экрана под полосой
+                root.barCenterReady = win.barAnchor;
+                if (win.barAnchor)
+                    root.barCenterX = win.screenWidth / 2;
                 root.pointerKnown = true;
             }
         }
@@ -470,25 +509,31 @@ ShellRoot {
             height: chrome.floating ? body.implicitHeight + 24 : win.height
             // виджет бара — по центру своей кнопки, эмодзи — справа снизу от
             // курсора
+            // виджет бара — строго под серединой своей кнопки (считает
+            // bar-geometry.py), эмодзи — справа снизу от курсора
             x: chrome.floating
                ? (win.barAnchor
-                  ? Math.max(8, Math.min(root.pointerX - chrome.width / 2,
+                  ? Math.max(8, Math.min((root.barCenterReady ? root.barCenterX
+                                                              : root.pointerX)
+                                         - chrome.width / 2,
                                          win.screenWidth - chrome.width - 8))
                   : Math.max(8, Math.min(root.pointerX + 18,
                                          win.screenWidth - chrome.width - 8)))
                : 0
             y: chrome.floating
                ? (win.barAnchor
+                  // строго под полосой (или над ней, если бар снизу): карточка
+                  // никогда не накрывает сам бар
                   ? (root.barPosition === "bottom"
                      ? Math.max(8, win.screenHeight - chrome.height - 44)
-                     : Math.max(8, Math.min(root.pointerY + 2,
-                                            win.screenHeight - chrome.height - 8)))
+                     : 44)
                   : Math.max(8, Math.min(root.pointerY + 18,
                                          win.screenHeight - chrome.height - 8)))
                : 0
-            // пока курсор не пойман, карточку не показываем: иначе она мигнёт
-            // в левом верхнем углу
-            visible: !chrome.floating || root.pointerKnown
+            // пока позиция не вычислена, карточку не показываем: иначе она
+            // мигнёт в левом верхнем углу
+            visible: !chrome.floating
+                     || (win.barAnchor ? root.barCenterReady : root.pointerKnown)
 
             radius: 10
             color: Colors.card

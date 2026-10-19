@@ -368,7 +368,7 @@ def render(palette):
     extra = {
         "font": font_family(),
         # плавающий бар — скруглённый островок, минимальный — вовсе без подложки
-        "bar_radius": "11px" if mode == "floating" else "0",
+        "bar_radius": "14px" if mode == "floating" else "0",
         "bar_bg": "transparent" if mode == "minimal"
                   else f"alpha({palette['bg']}, 0.75)",
     }
