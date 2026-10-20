@@ -33,6 +33,10 @@ ColumnLayout {
     readonly property string themeScript: (Quickshell.env("HOME") ?? "")
                                          + "/.config/quickshell/scripts/icons-cursors.py"
     property var themes: ({ icons: [], cursors: [], current_icon: "", current_cursor: "" })
+    readonly property string emojiFontScript: (Quickshell.env("HOME") ?? "")
+                                             + "/.config/quickshell/scripts/emoji-fonts.py"
+    property var emojiFonts: []
+    property string emojiFont: ""
 
     readonly property var shownFonts: {
         const q = page.fontFilter.trim().toLowerCase();
@@ -81,17 +85,18 @@ ColumnLayout {
     }
 
     // Под-вкладки: без них страница «Внешний вид» — это три экрана прокрутки.
-    property string tab: "wallpaper"
+    property string tab: "fonts"
 
     readonly property var tabs: [
-        { key: "wallpaper", name: Lang.t("Обои") },
         { key: "fonts", name: Lang.t("Шрифты") },
-        { key: "icons", name: Lang.t("Значки и курсоры") }
+        { key: "icons", name: Lang.t("Значки и курсоры") },
+        { key: "emoji", name: Lang.t("Эмодзи") }
     ]
 
     Component.onCompleted: {
         listProcess.running = true;
         themesProc.running = true;
+        emojiFontsProc.running = true;
     }
 
     Process {
@@ -162,12 +167,6 @@ ColumnLayout {
                 }
             }
         }
-    }
-
-    AppearanceSettings {
-        id: appearance
-        Layout.fillWidth: true
-        visible: page.tab === "wallpaper"
     }
 
     // ── Шрифты ─────────────────────────────────────────────────────────────
@@ -436,6 +435,123 @@ ColumnLayout {
             color: Colors.dim
             font.pixelSize: 10
             elide: Text.ElideRight
+        }
+    }
+
+    // ── эмодзи ─────────────────────────────────────────────────────────────
+    ColumnLayout {
+        id: emojiBlock
+        Layout.fillWidth: true
+        visible: page.tab === "emoji"
+        spacing: 10
+
+        Label {
+            text: Lang.t("Шрифт эмодзи")
+            font.pixelSize: 11
+            font.bold: true
+            color: Colors.dim
+        }
+
+        Process {
+            id: emojiFontsProc
+            command: ["python3", page.emojiFontScript, "list"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(text || "{}");
+                        page.emojiFonts = data.fonts || [];
+                        page.emojiFont = data.current || "";
+                    } catch (e) {
+                    }
+                }
+            }
+        }
+
+        Process {
+            id: emojiFontSetProc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(text || "{}");
+                        page.emojiFonts = data.fonts || [];
+                        page.emojiFont = data.current || "";
+                    } catch (e) {
+                    }
+                }
+            }
+        }
+
+        Column {
+            Layout.fillWidth: true
+            spacing: 1
+            height: Math.min(page.emojiFonts.length, 10) * 26
+
+            Repeater {
+                model: page.emojiFonts
+
+                delegate: Item {
+                    id: emojiFontRow
+
+                    required property var modelData
+
+                    readonly property bool current: page.emojiFont === emojiFontRow.modelData
+
+                    width: parent.width
+                    height: 26
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 5
+                        color: emojiFontRow.current ? Colors.selected
+                               : (emojiFontHover.containsMouse ? Colors.selected : "transparent")
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 7
+                        anchors.rightMargin: 7
+                        spacing: 8
+
+                        Label {
+                            text: emojiFontRow.current ? "\uf04b" : ""
+                            color: Colors.accent
+                            font.pixelSize: 11
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: emojiFontRow.modelData
+                            color: emojiFontRow.current ? Colors.text : Colors.muted
+                            font.pixelSize: 12
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: emojiFontHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            emojiFontSetProc.command = ["python3", page.emojiFontScript,
+                                                       "set", emojiFontRow.modelData];
+                            emojiFontSetProc.running = false;
+                            emojiFontSetProc.running = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: Lang.t("Панель эмодзи рисует глифы выбранным шрифтом: в Nerd Font "
+                         + "части эмодзи нет, и они выглядят квадратами. Список берётся "
+                         + "из fontconfig — там же можно поставить свой шрифт "
+                         + "(например, Noto Color Emoji, Symbola или Twemoji).")
+            font.pixelSize: 10
+            color: Qt.alpha(Colors.dim, 0.8)
+            wrapMode: Text.WordWrap
         }
     }
 

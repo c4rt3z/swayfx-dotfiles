@@ -36,6 +36,13 @@ exec sh -c "pgrep -x qs >/dev/null || env QT_QPA_PLATFORMTHEME=gtk3 qs"
 # Присмотр: поднимает quickshell, если он упал, и перезапускает, если подвис
 exec_always sh -c 'p="$(cat $HOME/.cache/wallpaper/watchdog.pid 2>/dev/null)"; if [ -z "$p" ] || ! grep -qa watchdog.sh /proc/"$p"/cmdline 2>/dev/null; then setsid -f $HOME/.config/quickshell/watchdog.sh >/dev/null 2>&1; fi'
 exec dbus-update-activation-environment --all
+# Сон по простою — как в Windows: отдельно от сети и от батареи (0 = не спим).
+# Мы блокируем собственный сон logind (systemd-inhibit --what=idle:sleep) и
+# решаем сами: scripts/sleep-policy.py смотрит простой и источник питания.
+# Настройки — «Службы» → «Сон по простою».
+exec_always systemd-inhibit --what=idle:sleep --mode=block \
+    python3 $HOME/.config/quickshell/scripts/sleep-policy.py watch
+
 exec swayidle -w timeout 300 'sh $HOME/.config/quickshell/scripts/idle-lock.sh' timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' before-sleep 'qs ipc call lock lock'
 #
 # Example configuration:

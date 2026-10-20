@@ -18,6 +18,12 @@ import "../../singletons"
 ColumnLayout {
     id: page
 
+    readonly property string sleepScript: (Quickshell.env("HOME") ?? "")
+                                        + "/.config/quickshell/scripts/sleep-policy.py"
+    property var sleepState: ({ ac_minutes: 0, battery_minutes: 0, source: "ac" })
+    property string sleepKey: "ac_minutes"
+    property int sleepValue: 0
+
     readonly property string home: Quickshell.env("HOME") ?? ""
     readonly property string script: home + "/.config/quickshell/scripts/system-index.py"
     readonly property string stateFile: home + "/.cache/quickshell/system.json"
@@ -38,7 +44,10 @@ ColumnLayout {
         Quickshell.execDetached(["python3", page.script].concat(args));
     }
 
-    Component.onCompleted: page.run(["build"])
+    Component.onCompleted: {
+        page.run(["build"]);
+        sleepProc.running = true;
+    }
 
     FileView {
         id: stateView
@@ -152,6 +161,119 @@ ColumnLayout {
     Label {
         Layout.fillWidth: true
         text: Lang.t("Перезапуск идёт той же командой, которой службу поднимает sway, — она видна в ~/.config/sway/config. quickshell после перезапуска открывает панели заново, поэтому окно настроек закроется.")
+        font.pixelSize: 10
+        color: Qt.alpha(Colors.dim, 0.8)
+        wrapMode: Text.WordWrap
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: Colors.border
+    }
+
+    // ── сон по простою ─────────────────────────────────────────────────────
+    Label {
+        text: Lang.t("Сон по простою")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    Process {
+        id: sleepProc
+        command: ["python3", page.sleepScript, "state"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text || "{}");
+                    page.sleepState = data;
+                } catch (e) {
+                }
+            }
+        }
+    }
+
+    Process {
+        id: sleepSetProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    page.sleepState = JSON.parse(text || "{}");
+                } catch (e) {
+                }
+            }
+        }
+    }
+
+    Repeater {
+        model: [
+            { key: "ac_minutes", name: Lang.t("От сети"), hint: Lang.t("минут до сна") },
+            { key: "battery_minutes", name: Lang.t("От батареи"), hint: Lang.t("минут до сна") }
+        ]
+
+        delegate: Item {
+            id: sleepRow
+
+            required property var modelData
+
+            Layout.fillWidth: true
+            implicitHeight: 30
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: 8
+
+                Label {
+                    Layout.preferredWidth: 92
+                    text: sleepRow.modelData.name
+                    color: Colors.text
+                    font.pixelSize: 12
+                }
+
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 120
+                    value: Number(page.sleepState[sleepRow.modelData.key]) || 0
+                    onMoved: v => {
+                        const state = Object.assign({}, page.sleepState);
+                        state[sleepRow.modelData.key] = Math.round(v);
+                        page.sleepState = state;
+                        sleepSave.restart();
+                    }
+                }
+
+                Label {
+                    Layout.preferredWidth: 96
+                    text: (Number(page.sleepState[sleepRow.modelData.key]) || 0)
+                          + Lang.t(" мин")
+                          + (Number(page.sleepState[sleepRow.modelData.key]) === 0
+                             ? Lang.t(" (не спит)") : "")
+                    color: Colors.dim
+                    font.pixelSize: 10
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: sleepSave
+        interval: 300
+        repeat: false
+        onTriggered: {
+            sleepSetProc.command = ["python3", page.sleepScript, "set",
+                                    page.sleepKey, String(page.sleepValue)];
+            sleepSetProc.running = false;
+            sleepSetProc.running = true;
+        }
+    }
+
+    Label {
+        Layout.fillWidth: true
+        text: Lang.t("Как в Windows: отдельно для сети и для батареи. 0 — не засыпать "
+                     + "вовсе. Свой сон logind не мешает: мы блокируем его и решаем сами "
+                     + "(scripts/sleep-policy.py), простой считаем так же, как swayidle.")
         font.pixelSize: 10
         color: Qt.alpha(Colors.dim, 0.8)
         wrapMode: Text.WordWrap

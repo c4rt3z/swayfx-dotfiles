@@ -13,6 +13,23 @@ ColumnLayout {
 
     readonly property string home: Quickshell.env("HOME") ?? ""
     readonly property string indexer: home + "/.config/quickshell/scripts/emoji-index.py"
+    // свой шрифт эмодзи: ~/.config/quickshell/emoji.json
+    property string emojiFont: "Noto Color Emoji"
+
+    FileView {
+        path: home + "/.config/quickshell/emoji.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            try {
+                const raw = typeof text === "function" ? text() : text;
+                const data = JSON.parse(raw || "{}");
+                if (data && data.font)
+                    emoji.emojiFont = data.font;
+            } catch (e) {
+            }
+        }
+    }
     readonly property string cacheFile: home + "/.cache/quickshell/emoji.json"
 
     property var items: []
@@ -137,6 +154,9 @@ ColumnLayout {
             Text {
                 anchors.centerIn: parent
                 text: cell.modelData.e
+                // эмодзи рисуем отдельным шрифтом: в Nerd Font половина глифов
+                // отсутствует, и они выглядят квадратами
+                font.family: emoji.emojiFont
                 font.pixelSize: 22
             }
 
