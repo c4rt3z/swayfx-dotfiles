@@ -541,6 +541,8 @@ weather, sound, keys, languages, defaults, services).
   published, everything else in `~/.config` (mail, messengers, keys, KDE state)
   stays out.
 
+For the detailed history see [CHANGELOG.md](CHANGELOG.md).
+
 ## Credits
 
 Wallpaper theme engine, panels, scripts and translations by

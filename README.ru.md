@@ -543,6 +543,8 @@ sidebar, weather, sound, keys, languages, defaults, services).
   остальное в `~/.config` (почта, мессенджеры, ключи, состояние KDE) остаётся
   личным.
 
+Подробная история изменений — в [CHANGELOG.md](CHANGELOG.md).
+
 ## Благодарности
 
 Движок темы, панели, скрипты и переводы — [c4rt3z](https://github.com/c4rt3z).
