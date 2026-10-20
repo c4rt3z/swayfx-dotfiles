@@ -1,9 +1,10 @@
 import QtQuick
 import "../singletons"
 
-// Поле ввода для меню настроек: рамка, значок слева, плейсхолдер и
-// крестик очистки. Своё, потому что в QtQuick готового TextField без
-// оформления нет, а в панели поиска он уже нарисован вручную.
+// Поле ввода для меню настроек. Сделано по образцу обычной кнопки списка
+// разделов: та же высота (30), та же иконка слева (отступ 9) и тот же отступ
+// под текст (32), тот же шрифт. Выглядит как ещё одна кнопка — только в неё
+// вводят.
 Item {
     id: field
 
@@ -25,12 +26,23 @@ Item {
         input.forceActiveFocus();
     }
 
+    // подложка и рамка — как у строк списка разделов
     Rectangle {
         anchors.fill: parent
-        radius: 7
-        color: Colors.selected
-        border.width: 1
-        border.color: input.activeFocus ? Colors.accent : Colors.divider
+        radius: 6
+        color: input.activeFocus ? Colors.selected
+               : (hover.containsMouse ? Colors.selected : "transparent")
+        border.width: input.activeFocus ? 1 : 0
+        border.color: Colors.accent
+    }
+
+    // зона наведения — под полем ввода, чтобы не мешать кликам
+    MouseArea {
+        id: hover
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        z: -1
     }
 
     Label {
@@ -39,18 +51,16 @@ Item {
         anchors.leftMargin: 9
         anchors.verticalCenter: parent.verticalCenter
         text: field.icon
-        color: Colors.dim
-        font.pixelSize: 12
+        font.pixelSize: 13
+        color: input.activeFocus ? Colors.accent : Colors.dim
     }
 
-    // плейсхолдер лежит под полем ввода, а не поверх: иначе он перехватывал
-    // бы щелчки мышью
+    // плейсхолдер — под полем ввода, иначе он перехватывал бы щелчки
     Label {
-        id: hint
-        anchors.left: iconLabel.right
-        anchors.leftMargin: 8
+        anchors.left: parent.left
+        anchors.leftMargin: 32
         anchors.right: clearButton.visible ? clearButton.left : parent.right
-        anchors.rightMargin: 8
+        anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
         visible: input.text === "" && !input.activeFocus
         text: field.placeholder
@@ -61,10 +71,10 @@ Item {
 
     TextInput {
         id: input
-        anchors.left: iconLabel.right
-        anchors.leftMargin: 8
+        anchors.left: parent.left
+        anchors.leftMargin: 32
         anchors.right: clearButton.visible ? clearButton.left : parent.right
-        anchors.rightMargin: 8
+        anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
         font.family: Fonts.panelFamily
         font.pixelSize: 12
@@ -84,7 +94,7 @@ Item {
     Label {
         id: clearButton
         anchors.right: parent.right
-        anchors.rightMargin: 8
+        anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
         visible: input.text !== ""
         text: "\u00d7"

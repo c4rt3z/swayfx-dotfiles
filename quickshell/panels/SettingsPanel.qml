@@ -67,24 +67,6 @@ ColumnLayout {
 
     spacing: 0
 
-    // Поиск по настройкам: во всю ширину окна, над списком разделов и
-    // страницей. Фильтрует разделы, Enter открывает первый подходящий.
-    TextField {
-        id: searchField
-        Layout.fillWidth: true
-        Layout.leftMargin: 12
-        Layout.rightMargin: 12
-        Layout.topMargin: 4
-        Layout.bottomMargin: 10
-        implicitHeight: 32
-        placeholder: Lang.t("Поиск по настройкам")
-        onEdited: value => panel.query = value
-        onAccepted: {
-            if (panel.shownSections.length > 0)
-                panel.section = panel.shownSections[0].key;
-        }
-    }
-
     RowLayout {
         id: body
         Layout.fillWidth: true
@@ -99,6 +81,19 @@ ColumnLayout {
             Layout.alignment: Qt.AlignTop
             Layout.preferredWidth: 210
             spacing: 2
+
+            // Поиск по настройкам — та же кнопка, только с полем ввода:
+            // фильтрует разделы, Enter открывает первый подходящий.
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholder: Lang.t("Поиск по настройкам")
+                onEdited: value => panel.query = value
+                onAccepted: {
+                    if (panel.shownSections.length > 0)
+                        panel.section = panel.shownSections[0].key;
+                }
+            }
 
             Repeater {
                 model: panel.shownSections
