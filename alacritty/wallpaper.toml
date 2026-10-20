@@ -2,33 +2,33 @@
 # Подключается из alacritty.toml в general.import.
 
 [colors.primary]
-background = '#1d2024'
-foreground = '#e2e2e9'
+background = '#212018'
+foreground = '#e6e2d5'
 
 [colors.cursor]
-text = '#08305f'
-cursor = '#a9c7ff'
+text = '#333200'
+cursor = '#cdca75'
 
 [colors.selection]
-text = '#d9e3f9'
-background = '#3e4758'
+text = '#e7e4bf'
+background = '#49482d'
 
 [colors.normal]
-black = '#44474e'
+black = '#48473a'
 red = '#ffb4ab'
-green = '#a9c7ff'
-yellow = '#dcbce1'
-blue = '#bdc7dc'
-magenta = '#264777'
-cyan = '#3e4758'
-white = '#c4c6cf'
+green = '#cdca75'
+yellow = '#a4d0bc'
+blue = '#cbc8a4'
+magenta = '#4a4900'
+cyan = '#49482d'
+white = '#cac7b6'
 
 [colors.bright]
-black = '#8e9099'
+black = '#939181'
 red = '#93000a'
-green = '#d6e3ff'
-yellow = '#f9d8fd'
-blue = '#d9e3f9'
-magenta = '#405f90'
-cyan = '#563e5c'
-white = '#e2e2e9'
+green = '#eae78e'
+yellow = '#c0ecd7'
+blue = '#e7e4bf'
+magenta = '#636117'
+cyan = '#264e3f'
+white = '#e6e2d5'

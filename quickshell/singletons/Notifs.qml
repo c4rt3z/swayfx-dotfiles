@@ -56,8 +56,20 @@ Item {
         });
     }
 
+    // Уведомление сначала гаснет (этим занимается тост), и только потом
+    // уходит из списка — иначе карточка исчезала бы мгновенно.
     function remove(n) {
-        root.live = root.live.filter(e => e.n !== n);
+        root.live = root.live.map(e => e.n === n
+                                      ? Object.assign({}, e, { leaving: true })
+                                      : e);
+        leaveTimer.restart();
+    }
+
+    Timer {
+        id: leaveTimer
+        interval: 280
+        repeat: false
+        onTriggered: root.live = root.live.filter(e => !e.leaving);
     }
 
     // Esc в панелях и кнопка в тосте зовут это

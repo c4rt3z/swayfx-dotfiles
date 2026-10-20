@@ -84,8 +84,9 @@ PanelWindow {
                     property real appear: 0
                     Component.onCompleted: appear = 1
 
-                    opacity: appear
-                    x: (1 - appear) * 46
+                    // уходящее уведомление уезжает обратно вправо и гаснет
+                    opacity: toast.modelData.leaving ? 0 : appear
+                    x: (toast.modelData.leaving ? 1 : (1 - appear)) * 46
 
                     Behavior on opacity {
                         NumberAnimation {
