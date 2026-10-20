@@ -88,6 +88,7 @@
  "Изображения": "Bilder",
  "Источник": "Quelle",
  "КБ": "KB",
+ "Как это применяется: выбор сразу уходит в gsettings, и GTK-программы подхватывают его сами — перезапускать их не нужно. Значки в панелях и в баре нарисованы глифами Nerd Font, поэтому тема значков их не касается. Курсор над рабочим столом — это курсор самого sway, тема курсоров меняет курсор внутри приложений. Qt-программы берут оформление из qt5ct/qt6ct — там своя настройка.": "Wie das angewendet wird: Die Auswahl geht direkt in gsettings, und GTK-Programme übernehmen sie selbst — ein Neustart ist nicht nötig. Die Symbole in den Panels und in der Leiste sind Nerd-Font-Glyphen, das Symboltheme fasst sie also nicht an. Der Mauszeiger über dem Schreibtisch ist der von sway selbst; das Mauszeigerthema ändert den Zeiger in den Anwendungen. Qt-Programme holen ihr Aussehen aus qt5ct/qt6ct — dort gibt es eine eigene Einstellung.",
  "Календарь и таймер": "Kalender und Timer",
  "Картинка": "Bild",
  "Клавиши": "Tasten",

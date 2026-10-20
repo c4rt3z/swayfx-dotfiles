@@ -88,6 +88,7 @@
  "Изображения": "Pictures",
  "Источник": "Source",
  "КБ": "KB",
+ "Как это применяется: выбор сразу уходит в gsettings, и GTK-программы подхватывают его сами — перезапускать их не нужно. Значки в панелях и в баре нарисованы глифами Nerd Font, поэтому тема значков их не касается. Курсор над рабочим столом — это курсор самого sway, тема курсоров меняет курсор внутри приложений. Qt-программы берут оформление из qt5ct/qt6ct — там своя настройка.": "How it applies: the choice goes straight into gsettings and GTK programs pick it up on their own — no restart needed. The icons in the panels and the bar are drawn with Nerd Font glyphs, so the icon theme does not touch them. The cursor over the desktop is sway’s own; the cursor theme changes the cursor inside applications. Qt programs take their look from qt5ct/qt6ct — that has its own setting.",
  "Календарь и таймер": "Calendar and timer",
  "Картинка": "Image",
  "Клавиши": "Keys",

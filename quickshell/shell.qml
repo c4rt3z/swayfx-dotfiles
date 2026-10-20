@@ -396,22 +396,32 @@ ShellRoot {
         // настройки: центр по обеим осям
         readonly property bool centering: root.activePanel === "settings"
 
-        // Панели держатся той же стороны, что и бар: бар сверху — панели
-        // сверху, бар снизу — панели уходят вниз, к бару. Настройки и
-        // лаунчер остаются по центру, поиск — на своём месте (spotlight).
-        readonly property bool barAtBottom: root.barPosition === "bottom"
-        anchors.top: win.overlay ? true : (!win.centering && !win.barAtBottom)
-        anchors.bottom: win.overlay || win.barAtBottom
+        // Панели у края (погода, переключение окон, плеер, календарь)
+        // держатся той же стороны, что и бар: бар снизу — панель уходит
+        // вниз, к бару. Настройки, лаунчер и поиск остаются на своих
+        // местах: настройки и лаунчер — по центру, поиск — spotlight.
+        readonly property bool followBar: root.barPosition === "bottom"
+                                         && root.activePanel !== "settings"
+                                         && root.activePanel !== "launcher"
+                                         && root.activePanel !== "search"
+        // панель всегда привязана к верхнему краю, а «по центру» получается
+        // большим отступом: так положение не зависит от того, как compositor
+        // трактует окно без привязок
+        anchors.top: win.overlay ? true : !win.followBar
+        anchors.bottom: win.overlay || win.followBar
         anchors.left: win.overlay
         anchors.right: win.overlay ? true : !win.centered
         margins.top: win.overlay ? 0
-                     : (win.barAtBottom ? 0
-                        : (root.activePanel === "launcher"
-                           ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
-                           : (root.activePanel === "search" ? win.spotlightTop : 40)))
+                     : (root.activePanel === "launcher"
+                        ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
+                        : (root.activePanel === "search" ? win.spotlightTop
+                           : (root.activePanel === "settings"
+                              ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
+                              : 40)))
+
         // снизу панель отступает от бара на столько же, сколько сверху
         margins.bottom: win.overlay ? 0
-                       : (win.barAtBottom ? 44 : 0)
+                       : (win.followBar ? 44 : 0)
         margins.left: 0
         margins.right: win.overlay ? 0 : 8
 
