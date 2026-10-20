@@ -50,12 +50,19 @@ PanelWindow {
     property bool busy: false
 
     // Открытие-закрытие: список перечитываем каждый раз, чтобы он не устаревал.
-    visible: Sidebar.open
-    // при открытии — выезд из-за края, при закрытии — обратно
+    //
+    // Пока идёт выезд, окно остаётся на экране (closing), иначе панель
+    // пропадала бы мгновенно, не доиграв анимацию.
+    visible: Sidebar.open || closing
     onVisibleChanged: {
-        if (visible)
+        if (Sidebar.open) {
+            closing = false;
             refresh();
-        slide = visible ? 1 : 0;
+            slide = 1;
+        } else if (!closing) {
+            closing = true;
+            slide = 0;
+        }
     }
 
     function readTrack(raw) {
@@ -212,10 +219,13 @@ PanelWindow {
     anchors.right: Sidebar.side === "right"
     anchors.top: true
     anchors.bottom: true
-    // Сайдбар выезжает из-за края экрана. Движение делает обычное свойство
-    // slide (0 — за краем, 1 — на месте): на grouped-свойствах margins
-    // Behavior не срабатывает, а так анимация видна.
+    // Сайдбар выезжает из-за края экрана. Двигается не поверхность, а
+    // карточка внутри: сдвиг самой поверхности заставлял композитор
+    // пересчитывать размытие под ней каждый кадр (10–15 fps), а
+    // поверхность ещё и уезжала за экран.
     property real slide: 0
+    property bool closing: false
+
 
     Behavior on slide {
         NumberAnimation {
@@ -224,12 +234,9 @@ PanelWindow {
         }
     }
 
-    margins.left: Sidebar.side === "left"
-                   ? 8 - (1 - slide) * (width + 40)
-                   : 0
-    margins.right: Sidebar.side === "right"
-                   ? 8 - (1 - slide) * (width + 40)
-                   : 0
+    // окно стоит на месте, карточка внутри едет
+    margins.left: 8
+    margins.right: 8
     margins.top: barPosition === "bottom" ? 8 : 42     // под баром waybar
     margins.bottom: barPosition === "bottom" ? 42 : 8
 
@@ -239,7 +246,11 @@ PanelWindow {
     implicitWidth: preferredWidth
 
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "qs-panel"
+    // Свой namespace — без размытия. Сайдбар большой (360×1200) и при выезде
+    // двигается: блюр такого куска пересчитывался бы каждый кадр, композитор
+    // упирался в 10–15 fps, а вместе с ним подвисали окна. Карточка и так
+    // почти непрозрачная — размытие за ней не видно.
+    WlrLayershell.namespace: "qs-sidebar"
     // клавиатуру забираем, только пока открыт: Esc должен доходить до нас
     WlrLayershell.keyboardFocus: Sidebar.open
         ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
@@ -248,6 +259,16 @@ PanelWindow {
         id: disarm
         interval: 3000
         onTriggered: side.armed = -1
+    }
+
+    // после выезда окно прячется совсем
+    Timer {
+        interval: 260
+        repeat: false
+        onTriggered: {
+            if (!Sidebar.open)
+                closing = false;
+        }
     }
 
     // Пока открыт — раз в 2 секунды подтягиваем свежие снимки и буфер: снимок
@@ -313,6 +334,14 @@ PanelWindow {
         border.width: 1
         border.color: Colors.border
         focus: true
+
+        // выезд из-за края: сдвиг и лёгкое проявление
+        opacity: slide
+        transform: Translate {
+            x: Sidebar.side === "right"
+               ? (1 - slide) * side.preferredWidth
+               : -(1 - slide) * side.preferredWidth
+        }
 
         Keys.onEscapePressed: Sidebar.hide()
 
