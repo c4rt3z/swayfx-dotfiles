@@ -297,6 +297,19 @@ reset to `JetBrainsMono Nerd Font`. Applied on the spot, no shell restart. The
 font must carry Nerd Font icons, otherwise glyphs turn into squares. Stored in
 `~/.config/quickshell/fonts.json`.
 
+**Your own commands** — drop scripts into `~/.config/quickshell/commands/` and
+they show up in the launcher and in search: the file name becomes the title, a
+first line starting with `#` becomes the description.
+
+**Window rules** — in “Services” you can pin an application to a workspace
+(“Firefox always on workspace 2”). It is done the native way: the script
+rewrites `~/.config/sway/window-rules` and sway includes it — no background
+processes involved.
+
+**Check and transfer** — “Services” has a “Check the dotfiles” button (translations,
+fonts, icons, scripts, singletons, saved state) and an export of every setting
+into one `~/.config/quickshell/export.json` for moving to another machine.
+
 **Notifications** — quickshell’s own toasts: the shell is the
 `org.freedesktop.Notifications` daemon itself, so dunst or swaync are not needed.
 Cards appear under the bar on the right (the background behind the card is

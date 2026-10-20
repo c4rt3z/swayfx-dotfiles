@@ -1,0 +1,10 @@
+{
+ "rules": [
+  {
+   "id": "firefox-2",
+   "app": "firefox",
+   "workspace": 2,
+   "floating": false
+  }
+ ]
+}

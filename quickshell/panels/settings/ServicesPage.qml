@@ -27,6 +27,10 @@ ColumnLayout {
     property string doctorResult: ""
     property bool doctorOk: true
     property string exportNote: ""
+    readonly property string rulesScript: (Quickshell.env("HOME") ?? "")
+                                       + "/.config/quickshell/scripts/window-rules.py"
+    property var rules: []
+    property var runningApps: []
     property var sleepState: ({ ac_minutes: 0, battery_minutes: 0, source: "ac" })
     property string sleepKey: "ac_minutes"
     property int sleepValue: 0
@@ -54,6 +58,7 @@ ColumnLayout {
     Component.onCompleted: {
         page.run(["build"]);
         sleepProc.running = true;
+        rulesProc.running = true;
     }
 
     FileView {
@@ -177,6 +182,154 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 1
         color: Colors.border
+    }
+
+    // ── правила окон ─────────────────────────────────────────────────────
+    Label {
+        text: Lang.t("Правила окон")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    Process {
+        id: rulesProc
+        command: ["python3", page.rulesScript, "list"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text || "{}");
+                    page.rules = data.rules || [];
+                } catch (e) {
+                    page.rules = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: ruleProc
+        stdout: StdioCollector {
+            onStreamFinished: rulesProc.running = false, rulesProc.running = true
+        }
+    }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 4
+
+        Repeater {
+            model: page.rules
+
+            delegate: Item {
+                id: ruleRow
+                required property var modelData
+
+                Layout.fillWidth: true
+                implicitHeight: 26
+
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 8
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: (ruleRow.modelData.app || Lang.t("любое окно"))
+                              + Lang.t(" → стол ") + ruleRow.modelData.workspace
+                        color: Colors.text
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                    }
+
+                    Label {
+                        text: "\u00d7"
+                        color: ruleDel.containsMouse ? Colors.red : Colors.dim
+                        font.pixelSize: 13
+
+                        MouseArea {
+                            id: ruleDel
+                            anchors.fill: parent
+                            anchors.margins: -5
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                ruleProc.command = ["python3", page.rulesScript,
+                                                    "remove", ruleRow.modelData.id];
+                                ruleProc.running = false;
+                                ruleProc.running = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        TextField {
+            id: ruleApp
+            Layout.fillWidth: true
+            placeholder: Lang.t("приложение, напр. firefox")
+            onAccepted: ruleAdd.clicked()
+        }
+
+        TextField {
+            id: ruleWs
+            Layout.preferredWidth: 70
+            placeholder: Lang.t("стол")
+            onAccepted: ruleAdd.clicked()
+        }
+
+        Item {
+            implicitWidth: 86
+            implicitHeight: 30
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 7
+                color: ruleAddHover.containsMouse ? Colors.selected : "transparent"
+                border.width: 1
+                border.color: ruleAddHover.containsMouse ? Colors.accent : Colors.divider
+            }
+
+            Label {
+                anchors.centerIn: parent
+                text: Lang.t("Добавить")
+                color: ruleAddHover.containsMouse ? Colors.text : Colors.muted
+                font.pixelSize: 11
+            }
+
+            MouseArea {
+                id: ruleAddHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    const ws = parseInt(ruleWs.text, 10);
+                    if (!ws || ws < 1)
+                        return;
+                    ruleProc.command = ["python3", page.rulesScript, "add",
+                                        ruleApp.text.trim(), String(ws)];
+                    ruleProc.running = false;
+                    ruleProc.running = true;
+                    ruleApp.text = "";
+                    ruleWs.text = "";
+                }
+            }
+        }
+    }
+
+    Label {
+        Layout.fillWidth: true
+        text: Lang.t("Правило держит приложение на своём столе. Применяет их сам "
+                     + "sway: скрипт переписывает ~/.config/sway/window-rules, а sway "
+                     + "подключает его через include — никаких фоновых процессов.")
+        font.pixelSize: 10
+        color: Qt.alpha(Colors.dim, 0.8)
+        wrapMode: Text.WordWrap
     }
 
     // ── проверка и перенос настроек ───────────────────────────────────────

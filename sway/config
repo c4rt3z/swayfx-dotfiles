@@ -31,6 +31,10 @@ exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DE
 # pipewire / wireplumber / pipewire-pulse запускаются systemd (socket activation).
 # Вручную не стартуем: иначе конфликт за сокет /run/user/1001/pipewire-0 и звук отваливается.
 exec systemctl --user start wireplumber.service
+# Правила окон (какое приложение на каком столе) — файл переписывает
+# quickshell/scripts/window-rules.py, а правила живут в настройках.
+include ~/.config/sway/window-rules
+
 # Панели quickshell (меню по клику на модули waybar)
 exec sh -c "pgrep -x qs >/dev/null || env QT_QPA_PLATFORMTHEME=gtk3 qs"
 # Присмотр: поднимает quickshell, если он упал, и перезапускает, если подвис
