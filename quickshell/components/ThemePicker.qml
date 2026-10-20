@@ -12,7 +12,7 @@ ColumnLayout {
     property string title: ""
     property var items: []
     property string current: ""
-    property int maxRows: 8
+    property int maxRows: 40
 
     signal picked(string name)
 
@@ -79,7 +79,8 @@ ColumnLayout {
     Label {
         Layout.fillWidth: true
         visible: root.items.length > root.maxRows
-        text: Lang.t("…и ещё ") + (root.items.length - root.maxRows)
+        text: Lang.t("показаны первые ") + root.maxRows + Lang.t(" из ")
+              + root.items.length
         color: Colors.dim
         font.pixelSize: 10
     }
