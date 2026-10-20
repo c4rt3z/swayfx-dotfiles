@@ -18,7 +18,8 @@ ColumnLayout {
 
     property var cfg: ({
         side: "left", width: 24, labels: true, grid: "2x3",
-        widgets: { weather: true, now: true, session: true, shots: true, clipboard: true }
+        widgets: { weather: true, now: true, session: true, shots: true,
+                   clipboard: true, notifications: true }
     })
     property int widthValue: 24
 
@@ -258,7 +259,8 @@ ColumnLayout {
                 { key: "now", name: Lang.t("Сейчас играет"), icon: "\uf001" },
                 { key: "session", name: Lang.t("Кнопки сессии"), icon: "\uf011" },
                 { key: "shots", name: Lang.t("Снимки экрана"), icon: "\uf03e" },
-                { key: "clipboard", name: Lang.t("Буфер обмена"), icon: "\uf0c5" }
+                { key: "clipboard", name: Lang.t("Буфер обмена"), icon: "\uf0c5" },
+            { key: "notifications", name: Lang.t("Недавние уведомления"), icon: "\uf0a3" }
             ]
 
             delegate: Item {

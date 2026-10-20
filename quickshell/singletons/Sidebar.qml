@@ -30,7 +30,8 @@ Item {
         width: 24,
         labels: true,
         grid: "2x3",
-        widgets: { weather: true, now: true, session: true, shots: true, clipboard: true }
+        widgets: { weather: true, now: true, session: true, shots: true,
+                   clipboard: true, notifications: true }
     })
 
     readonly property string side: cfg.side === "right" ? "right" : "left"

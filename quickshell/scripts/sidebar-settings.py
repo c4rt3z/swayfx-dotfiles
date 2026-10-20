@@ -31,6 +31,7 @@ DEFAULTS = {
         "session": True,
         "shots": True,
         "clipboard": True,
+        "notifications": True,
     },
 }
 

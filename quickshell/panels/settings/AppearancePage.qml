@@ -29,6 +29,11 @@ ColumnLayout {
     property var fonts: []
     property string current: ""
 
+    // значки и курсоры
+    readonly property string themeScript: (Quickshell.env("HOME") ?? "")
+                                         + "/.config/quickshell/scripts/icons-cursors.py"
+    property var themes: ({ icons: [], cursors: [], current_icon: "", current_cursor: "" })
+
     readonly property var shownFonts: {
         const q = page.fontFilter.trim().toLowerCase();
         if (q === "")
@@ -75,7 +80,10 @@ ColumnLayout {
         setProcess.running = true;
     }
 
-    Component.onCompleted: listProcess.running = true
+    Component.onCompleted: {
+        listProcess.running = true;
+        themesProc.running = true;
+    }
 
     Process {
         id: listProcess
@@ -371,5 +379,85 @@ ColumnLayout {
             font.pixelSize: 10
             elide: Text.ElideRight
         }
+    }
+
+    // ── значки и курсоры ───────────────────────────────────────────────────
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: Colors.border
+    }
+
+    Label {
+        text: Lang.t("Значки и курсоры")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    Process {
+        id: themesProc
+        command: ["python3", page.themeScript, "list"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text || "{}");
+                    page.themes = data;
+                } catch (e) {
+                    page.themes = ({ icons: [], cursors: [], current_icon: "", current_cursor: "" });
+                }
+            }
+        }
+    }
+
+    Process {
+        id: themeSetProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    page.themes = JSON.parse(text || "{}");
+                } catch (e) {
+                }
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 18
+
+        ThemePicker {
+            Layout.fillWidth: true
+            title: Lang.t("Темы значков")
+            items: page.themes.icons || []
+            current: page.themes.current_icon || ""
+            onPicked: name => {
+                themeSetProc.command = ["python3", page.themeScript, "set", "icons", name];
+                themeSetProc.running = false;
+                themeSetProc.running = true;
+            }
+        }
+
+        ThemePicker {
+            Layout.fillWidth: true
+            title: Lang.t("Курсоры")
+            items: page.themes.cursors || []
+            current: page.themes.current_cursor || ""
+            onPicked: name => {
+                themeSetProc.command = ["python3", page.themeScript, "set", "cursors", name];
+                themeSetProc.running = false;
+                themeSetProc.running = true;
+            }
+        }
+    }
+
+    Label {
+        Layout.fillWidth: true
+        text: Lang.t("Темы берутся из ~/.local/share/icons и /usr/share/icons. "
+                     + "Применяются сразу — для GTK-приложений; Qt-программы берут "
+                     + "оформление из qt5ct/qt6ct.")
+        font.pixelSize: 10
+        color: Qt.alpha(Colors.dim, 0.8)
+        wrapMode: Text.WordWrap
     }
 }

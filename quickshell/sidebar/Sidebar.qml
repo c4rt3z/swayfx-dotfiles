@@ -838,6 +838,104 @@ PanelWindow {
                         }
                     }
 
+                    // ── недавние уведомления ─────────────────────────────
+                    RowLayout {
+                        Layout.fillWidth: true
+                        visible: Sidebar.widget("notifications") && Notifs.history.length > 0
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: Lang.t("Недавние уведомления")
+                            color: Colors.muted
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+
+                        Label {
+                            text: Notifs.history.length
+                            color: Colors.dim
+                            font.pixelSize: 10
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: Sidebar.widget("notifications") && Notifs.history.length > 0
+                        spacing: 2
+
+                        Repeater {
+                            model: Notifs.history.slice(0, 12)
+
+                            delegate: Item {
+                                id: noteRow
+
+                                required property var modelData
+
+                                Layout.fillWidth: true
+                                implicitHeight: 38
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 6
+                                    color: noteHover.containsMouse ? Colors.selected : "transparent"
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 6
+                                    spacing: 8
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 1
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: noteRow.modelData.app
+                                                  || Lang.t("Система")
+                                            color: Colors.accent
+                                            font.pixelSize: 9
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: noteRow.modelData.summary !== ""
+                                                  ? noteRow.modelData.summary
+                                                  : noteRow.modelData.body
+                                            color: Colors.text
+                                            font.pixelSize: 11
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "\uf0c5"
+                                        color: noteHover.containsMouse ? Colors.accent : Colors.dim
+                                        font.pixelSize: 11
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: noteHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    // щелчок копирует текст уведомления
+                                    onClicked: {
+                                        const text = noteRow.modelData.summary !== ""
+                                                     ? noteRow.modelData.summary
+                                                     : noteRow.modelData.body;
+                                        if (text !== "")
+                                            Quickshell.execDetached(["sh", "-c",
+                                                "printf '%s' \"" + text.replace(/"/g, '\\"') + "\" | wl-copy"]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // ── буфер обмена ──────────────────────────────────────
                     RowLayout {
                         Layout.fillWidth: true

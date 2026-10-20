@@ -15,6 +15,10 @@ Item {
     // живые тосты: { n: Notification, key: строка }
     property var live: []
 
+    // история последних уведомлений — её показывает сайдбар
+    property var history: []
+    readonly property int maxHistory: 24
+
     // больше четырёх карточек одновременно держать незачем
     readonly property int maxVisible: 4
 
@@ -40,6 +44,13 @@ Item {
         const list = root.live.filter(e => e.n !== n);
         list.unshift(entry);
         root.live = list.slice(0, root.maxVisible);
+        // в историю кладём текст: сам объект уведомления живёт недолго
+        root.history = [{
+            app: n.appName || "",
+            summary: n.summary || "",
+            body: n.body || "",
+            time: Date.now()
+        }].concat(root.history).slice(0, root.maxHistory);
         n.closed.connect(function () {
             root.remove(n);
         });

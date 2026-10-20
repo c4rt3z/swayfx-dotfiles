@@ -396,15 +396,22 @@ ShellRoot {
         // настройки: центр по обеим осям
         readonly property bool centering: root.activePanel === "settings"
 
-        anchors.top: win.overlay ? true : !win.centering
-        anchors.bottom: win.overlay
+        // Панели держатся той же стороны, что и бар: бар сверху — панели
+        // сверху, бар снизу — панели уходят вниз, к бару. Настройки и
+        // лаунчер остаются по центру, поиск — на своём месте (spotlight).
+        readonly property bool barAtBottom: root.barPosition === "bottom"
+        anchors.top: win.overlay ? true : (!win.centering && !win.barAtBottom)
+        anchors.bottom: win.overlay || win.barAtBottom
         anchors.left: win.overlay
         anchors.right: win.overlay ? true : !win.centered
         margins.top: win.overlay ? 0
-                     : (root.activePanel === "launcher"
-                        ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
-                        : (root.activePanel === "search" ? win.spotlightTop : 40))
-        margins.bottom: 0
+                     : (win.barAtBottom ? 0
+                        : (root.activePanel === "launcher"
+                           ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
+                           : (root.activePanel === "search" ? win.spotlightTop : 40)))
+        // снизу панель отступает от бара на столько же, сколько сверху
+        margins.bottom: win.overlay ? 0
+                       : (win.barAtBottom ? 44 : 0)
         margins.left: 0
         margins.right: win.overlay ? 0 : 8
 

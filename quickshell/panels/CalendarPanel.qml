@@ -239,33 +239,122 @@ ColumnLayout {
 
         Label {
             Layout.fillWidth: true
-            text: Lang.t("Таймер")
+            text: Lang.t("Таймеры")
             color: Colors.text
             font.pixelSize: 13
             font.bold: true
         }
 
         Label {
-            text: Countdown.clock
-            color: Countdown.active ? (Countdown.paused ? Colors.muted : Colors.accent) : Colors.dim
-            font.pixelSize: 16
-            font.bold: true
+            visible: Countdown.timers.length > 0
+            text: Countdown.timers.length
+            color: Colors.dim
+            font.pixelSize: 11
         }
     }
 
-    // полоса отсчёта
-    Rectangle {
+    // запущенные таймеры: их может быть несколько сразу
+    Column {
         Layout.fillWidth: true
-        visible: Countdown.active
-        implicitHeight: 3
-        radius: 1.5
-        color: Colors.track
+        spacing: 6
+        visible: Countdown.timers.length > 0
+        height: Countdown.timers.length * 52
 
-        Rectangle {
-            height: parent.height
-            radius: parent.radius
-            width: parent.width * Countdown.progress
-            color: Colors.accent
+        Repeater {
+            model: Countdown.timers
+
+            delegate: Rectangle {
+                id: timerRow
+
+                required property var modelData
+
+                width: parent.width
+                height: 46
+                radius: 8
+                color: Colors.base
+                border.width: 1
+                border.color: Colors.divider
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 5
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Label {
+                            text: timerRow.modelData.clock
+                            color: timerRow.modelData.paused
+                                   ? Colors.muted
+                                   : (timerRow.modelData.finished ? Colors.dim : Colors.accent)
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: timerRow.modelData.title
+                            color: Colors.text
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
+                        }
+
+                        // пауза/продолжить
+                        Label {
+                            text: timerRow.modelData.paused ? "\uF04B" : "\uF04C"
+                            color: pauseHover.containsMouse ? Colors.accent : Colors.muted
+                            font.pixelSize: 12
+
+                            MouseArea {
+                                id: pauseHover
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (timerRow.modelData.paused)
+                                        Countdown.resume(timerRow.modelData.id);
+                                    else
+                                        Countdown.pause(timerRow.modelData.id);
+                                }
+                            }
+                        }
+
+                        // остановить
+                        Label {
+                            text: "\uF00D"
+                            color: stopHover.containsMouse ? Colors.red : Colors.muted
+                            font.pixelSize: 12
+
+                            MouseArea {
+                                id: stopHover
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Countdown.stop(timerRow.modelData.id)
+                            }
+                        }
+                    }
+
+                    // полоса отсчёта
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 3
+                        radius: 1.5
+                        color: Colors.track
+
+                        Rectangle {
+                            height: parent.height
+                            radius: parent.radius
+                            width: parent.width * timerRow.modelData.progress
+                            color: Colors.accent
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -273,7 +362,6 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
-        visible: !Countdown.active
 
         Rectangle {
             Layout.fillWidth: true
@@ -382,58 +470,4 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
-        visible: Countdown.active
-
-        Repeater {
-            model: [
-                { icon: "\uF04B", label: Lang.t("Продолжить"), act: "resume" },
-                { icon: "\uF04C", label: Lang.t("Пауза"), act: "pause" },
-                { icon: "\uF00D", label: Lang.t("Сбросить"), act: "stop" }
-            ]
-
-            delegate: Item {
-                required property var modelData
-                visible: modelData.act === "stop"
-                         || (modelData.act === "pause" && !Countdown.paused)
-                         || (modelData.act === "resume" && Countdown.paused)
-                Layout.fillWidth: true
-                implicitHeight: 30
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 8
-                    color: ctrlArea.containsMouse ? Colors.selected : "transparent"
-                    border.width: 1
-                    border.color: ctrlArea.containsMouse ? Colors.accent : Colors.divider
-                }
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: 6
-                    Label {
-                        text: modelData.icon
-                        color: Colors.muted
-                        font.pixelSize: 11
-                    }
-                    Label {
-                        text: modelData.label
-                        color: ctrlArea.containsMouse ? Colors.text : Colors.muted
-                        font.pixelSize: 11
-                    }
-                }
-                MouseArea {
-                    id: ctrlArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        if (modelData.act === "pause") Countdown.pause();
-                        else if (modelData.act === "resume") Countdown.resume();
-                        else Countdown.stop();
-                    }
-                }
-            }
-        }
-    }
 }

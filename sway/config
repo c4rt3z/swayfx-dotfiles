@@ -318,6 +318,13 @@ layer_effects "qs-panel" {
     blur_ignore_transparent enable
 }
 
+# Сайдбар: своё правило, чтобы не мешать с панелями. Поверхность сайдбара
+# неподвижна (езет карточка внутри неё), поэтому размытие считается один раз.
+layer_effects "qs-sidebar" {
+    blur enable
+    blur_ignore_transparent enable
+}
+
 # Тосты уведомлений quickshell: поверхность маленькая (только стопка карточек),
 # но между карточками есть прозрачные промежутки — их не размываем.
 layer_effects "qs-toast" {

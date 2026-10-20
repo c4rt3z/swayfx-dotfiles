@@ -246,6 +246,8 @@ the player). Then come the blocks:
   and power off. Dangerous actions ask for a second click;
 * **screenshots** — four buttons (region, window, whole screen, in three
   seconds) and a strip of recent shots: copy, open, delete;
+* **recent notifications** — what came in lately: app, title and text; a click
+  copies the text to the clipboard;
 * **clipboard** — history of text and images. No extra package needed:
   `wl-paste --watch` feeds `quickshell/scripts/clipboard.py`, which keeps the
   history. A copied screenshot lands here too. The cross next to an entry removes
@@ -267,17 +269,22 @@ weather module in the bar or `qs ipc call panel bar weather`. Every widget opene
 from waybar lands exactly under its own button (the shell takes its position from
 the cursor), or above it when the bar sits at the bottom.
 
-**Calendar and timer** — click the clock in the bar (or `Super+C`): a month with
-today highlighted and a timer. Presets from 1 to 45 minutes plus a field for your
-own time: `25` for minutes, `25:30` for minutes and seconds, `1:05:00` for hours,
-minutes, seconds. The countdown lives in the shell, so the panel can be closed —
-a notification arrives at zero.
+**Calendar and timers** — click the clock in the bar (or `Super+C`): a month with
+today highlighted and timers. There can be **several at once**, each with its own
+countdown, progress bar, pause and reset. Presets from 1 to 45 minutes plus a
+field for your own time: `25` for minutes, `25:30` for minutes and seconds,
+`1:05:00` for hours, minutes, seconds. The countdowns live in the shell, so the
+panel can be closed — a notification arrives at zero.
 
 **Battery** (click the charge icon in the bar) — percentage, time to full or
 empty, and an “Auto-lock when idle” switch: it turns off the five-minute idle
 screen lock without touching the lock before sleep. It applies right away
 (`quickshell/scripts/autolock.sh` restarts `swayidle` if it was still running
 the command from an older config).
+
+**Icons and cursors** live there too, under “Appearance”: the list of installed
+icon themes (`~/.local/share/icons`, `/usr/share/icons`) and cursor themes, the
+current ones are marked, and a click applies them right away through gsettings.
 
 **Fonts** — `Super+,` → “Appearance”, below the “Fonts” rule. The list comes
 from fontconfig (searchable, each name drawn in its own face); you can set one
