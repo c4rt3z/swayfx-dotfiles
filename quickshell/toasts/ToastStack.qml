@@ -78,6 +78,29 @@ PanelWindow {
                     border.width: 1
                     border.color: toast.critical ? Colors.red : Colors.border
 
+                    // Появление: карточка выезжает справа и проявляется.
+                    // appear стартует нулём, а при появлении уведомления
+                    // переключается в единицу — Behavior дорисовывает движение.
+                    property real appear: 0
+                    Component.onCompleted: appear = 1
+
+                    opacity: appear
+                    x: (1 - appear) * 46
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Animations.toasts ? 200 : 0
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: Animations.toasts ? 240 : 0
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
                     ColumnLayout {
                         id: body
 

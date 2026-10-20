@@ -40,6 +40,8 @@ ColumnLayout {
           keys: "погода город прогноз ветер температура" },
         { key: "sound", name: Lang.t("Звук"), glyph: "\uf028", ready: true,
           keys: "звук громкость эквалайзер пресеты easyeffects колонки" },
+        { key: "animations", name: Lang.t("Анимации"), glyph: "\uf0e4", ready: true,
+          keys: "анимации анимация появление закрытие fade swayfx плавность" },
         { key: "keys", name: Lang.t("Клавиши"), glyph: "\uf11c", ready: true,
           keys: "клавиши бинды сочетания горячие перебинд" },
         { key: "languages", name: Lang.t("Раскладки"), glyph: "\uf0ac", ready: true,
@@ -214,6 +216,8 @@ ColumnLayout {
                         return weatherPage;
                     if (panel.section === "sound")
                         return soundPage;
+                    if (panel.section === "animations")
+                        return animationsPage;
                     if (panel.section === "keys")
                         return keysPage;
                     if (panel.section === "languages")
@@ -264,6 +268,11 @@ ColumnLayout {
     Component {
         id: soundPage
         SoundPage {}
+    }
+
+    Component {
+        id: animationsPage
+        AnimationsPage {}
     }
 
     Component {

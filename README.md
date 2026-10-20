@@ -181,6 +181,7 @@ opens the first match.
 | Sidebar | screen side, width, button labels, tile grid (2×3 or 3×2) and widgets: weather, track, session, shots, clipboard |
 | Weather | source (open-meteo without a key, or an OpenWeather key), city, units |
 | Sound | volume, output device, sound card profiles and the EasyEffects equalizer: presets, bypass, service |
+| Animations | windows (swayfx), panels, sidebar and notifications: duration and switches |
 | Keys | every sway binding as `shortcut — command`, with rebinding |
 | Layouts | keyboard layouts: enable, disable, pick the active one |
 | Default applications | one application per task, Windows style (terminal, file manager, browser, editor, images, video, music, PDF, archives, mail) |
@@ -301,6 +302,14 @@ to open EasyEffects and add them there (the community keeps ready-made sets, for
 example `github.com/M0Rf30/easyeffects-presets`). All of it is done by
 `quickshell/scripts/audio.py`, which also works from the terminal:
 `audio.py sink <device>`, `audio.py preset <name>`, `audio.py bypass on`.
+
+**Animations** live in `Super+,` → “Animations”. Windows fade in and out (that
+is swayfx — the duration is a slider and applies live through
+`swaymsg animation_duration_ms`), quickshell panels fade in with a slight scale,
+the sidebar slides in from the edge and notifications slide in from the right.
+Every switch can be turned off; the settings live in
+`~/.config/quickshell/animations.json`. Waybar animates its own hover highlight
+and workspace changes too — through CSS transitions.
 
 **The bar (waybar)** is configured in the same place, under “Bar”: modules and
 their zones, position (top or bottom), look — solid, a rounded floating island,

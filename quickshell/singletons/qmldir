@@ -5,3 +5,4 @@ singleton Sidebar 1.0 Sidebar.qml
 singleton Countdown 1.0 Countdown.qml
 singleton Fonts 1.0 Fonts.qml
 singleton Notifs 1.0 Notifs.qml
+singleton Animations 1.0 Animations.qml

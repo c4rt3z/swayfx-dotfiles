@@ -8,6 +8,10 @@
     font-size: 13px;
     font-weight: bold;
     min-height: 0;
+    /* плавные переходы: подсветка при наведении и смена рабочего стола
+       не должны щёлкать — GTK умеет анимировать свойства CSS */
+    transition: background-color 140ms ease-out, color 140ms ease-out,
+                border-color 140ms ease-out;
 }
 
 /* --- СПЛОШНАЯ ПАНЕЛЬ НА ВСЮ ШИРИНУ (прозрачность как у терминала: 0.75) --- */

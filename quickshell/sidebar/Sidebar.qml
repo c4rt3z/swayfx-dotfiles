@@ -51,7 +51,12 @@ PanelWindow {
 
     // Открытие-закрытие: список перечитываем каждый раз, чтобы он не устаревал.
     visible: Sidebar.open
-    onVisibleChanged: if (visible) refresh()
+    // при открытии — выезд из-за края, при закрытии — обратно
+    onVisibleChanged: {
+        if (visible)
+            refresh();
+        slide = visible ? 1 : 0;
+    }
 
     function readTrack(raw) {
         const parts = (raw || "").split("|");
@@ -207,8 +212,24 @@ PanelWindow {
     anchors.right: Sidebar.side === "right"
     anchors.top: true
     anchors.bottom: true
-    margins.left: Sidebar.side === "left" ? 8 : 0
-    margins.right: Sidebar.side === "right" ? 8 : 0
+    // Сайдбар выезжает из-за края экрана. Движение делает обычное свойство
+    // slide (0 — за краем, 1 — на месте): на grouped-свойствах margins
+    // Behavior не срабатывает, а так анимация видна.
+    property real slide: 0
+
+    Behavior on slide {
+        NumberAnimation {
+            duration: Animations.sidebar ? 220 : 0
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    margins.left: Sidebar.side === "left"
+                   ? 8 - (1 - slide) * (width + 40)
+                   : 0
+    margins.right: Sidebar.side === "right"
+                   ? 8 - (1 - slide) * (width + 40)
+                   : 0
     margins.top: barPosition === "bottom" ? 8 : 42     // под баром waybar
     margins.bottom: barPosition === "bottom" ? 42 : 8
 

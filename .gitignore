@@ -47,6 +47,8 @@ quickshell/sidebar.json
 wallpaper/slideshow.json
 # вид бара: сплошной, плавающий или без фона
 waybar/mode
+# настройки анимаций (окна, панели, сайдбар, уведомления)
+quickshell/animations.json
 
 # сторонние темы alacritty — отдельный репозиторий, ставится клоном
 # (см. README: ~/.config/alacritty/themes)

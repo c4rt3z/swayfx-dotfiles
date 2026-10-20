@@ -51,6 +51,11 @@ ShellRoot {
     // курсора и сразу под баром.
     property bool panelFromBar: false
 
+    // Панель гаснет перед закрытием: сначала карточка уезжает (анимация в
+    // карточке ниже), и только потом панель прячется. Иначе закрытие было бы
+    // мгновенным и выглядело бы обрывом.
+    property bool closing: false
+
     // Настоящая середина кнопки бара, по которой кликнули. Курсор для этого
     // не годится: человек нажимает не в середину, а мышь к тому же успевает
     // уехать. Считаем по снимку полосы (scripts/bar-geometry.py): он находит
@@ -152,6 +157,18 @@ ShellRoot {
         onLoadFailed: root.slideshow = ({ on: false, minutes: 15 })
     }
 
+    // Закрыть панель с анимацией: гасим карточку, по её концу прячем панель.
+    function closePanel(): void {
+        if (root.activePanel === "")
+            return;
+        if (Animations.panels && !root.closing) {
+            root.closing = true;
+        } else {
+            root.closing = false;
+            root.activePanel = "";
+        }
+    }
+
     function readSlideshow(raw) {
         try {
             const data = JSON.parse((raw || "").trim() || "{}");
@@ -188,10 +205,16 @@ ShellRoot {
 
         function toggle(name: string): void {
             root.panelFromBar = false;
-            root.activePanel = (root.activePanel === name) ? "" : name;
+            if (root.activePanel === name) {
+                root.closePanel();
+                return;
+            }
+            root.closing = false;
+            root.activePanel = name;
         }
         function open(name: string): void {
             root.panelFromBar = false;
+            root.closing = false;
             root.activePanel = name;
         }
         // виджет бара: qs ipc call panel bar volume — встанет под своей кнопкой
@@ -207,7 +230,7 @@ ShellRoot {
         }
         function close(): void {
             root.panelFromBar = false;
-            root.activePanel = "";
+            root.closePanel();
         }
         // проверка связи: qs ipc call panel ping
         function ping(): string {
@@ -471,7 +494,7 @@ ShellRoot {
                 const my = pointerWatch.mouseY;
                 if (mx < chrome.x || mx > chrome.x + chrome.width
                         || my < chrome.y || my > chrome.y + chrome.height)
-                    root.activePanel = "";
+                    root.closePanel();
             }
         }
 
@@ -530,10 +553,38 @@ ShellRoot {
                   : Math.max(8, Math.min(root.pointerY + 18,
                                          win.screenHeight - chrome.height - 8)))
                : 0
-            // пока позиция не вычислена, карточку не показываем: иначе она
-            // мигнёт в левом верхнем углу
-            visible: !chrome.floating
-                     || (win.barAnchor ? root.barCenterReady : root.pointerKnown)
+            // Пока позиция не вычислена, карточку не показываем: иначе она
+            // мигнёт в левом верхнем углу.
+            visible: opacity > 0.01
+                     && (!chrome.floating
+                         || (win.barAnchor ? root.barCenterReady : root.pointerKnown))
+
+            // Появление и исчезновение: панель сначала проявляется и чуть
+            // расправляется, а перед закрытием — гаснет и сжимается. Когда
+            // анимация закончилась, панель прячется.
+            opacity: root.activePanel === "" ? 0 : (root.closing ? 0 : 1)
+            scale: root.closing ? 0.97 : 1
+            transformOrigin: Item.Center
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Animations.panels ? 160 : 0
+                    easing.type: Easing.OutCubic
+                    onFinished: {
+                        if (root.closing) {
+                            root.closing = false;
+                            root.activePanel = "";
+                        }
+                    }
+                }
+            }
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: Animations.panels ? 160 : 0
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             radius: 10
             color: Colors.card
@@ -548,7 +599,7 @@ ShellRoot {
 
             Keys.onEscapePressed: {
                 if (root.activePanel !== "")
-                    root.activePanel = "";
+                    root.closePanel();
             }
 
             ColumnLayout {
@@ -584,7 +635,7 @@ ShellRoot {
                             id: closeArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            onClicked: root.activePanel = ""
+                            onClicked: root.closePanel()
                         }
                     }
                 }
