@@ -337,11 +337,13 @@ PanelWindow {
 
         // выезд из-за края: сдвиг и лёгкое проявление
         opacity: slide
-        transform: Translate {
-            x: Sidebar.side === "right"
-               ? (1 - slide) * side.preferredWidth
-               : -(1 - slide) * side.preferredWidth
-        }
+        transform: [
+            Translate {
+                x: Sidebar.side === "right"
+                   ? (1 - slide) * side.preferredWidth
+                   : -(1 - slide) * side.preferredWidth
+            }
+        ]
 
         Keys.onEscapePressed: Sidebar.hide()
 

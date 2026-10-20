@@ -451,11 +451,10 @@ ShellRoot {
         // стол, у "qs-panel" включён blur_ignore_transparent (см. layer_effects
         // в ~/.config/sway/config).
         WlrLayershell.namespace: "qs-panel"
-        // клавиатуру забирает любая панель, кроме галереи обоев: только так
-        // Esc дойдёт до панели, а не до окна под ней. Закрылась — композитор
-        // вернёт фокус тому окну, где он был.
-        WlrLayershell.keyboardFocus: (root.activePanel !== ""
-                                      && root.activePanel !== "wallpaper")
+        // Клавиатуру забирает любая открытая панель — включая галерею обоев:
+        // иначе Esc уходит в окно под ней, и панель не закрывается. Закрылась —
+        // композитор вернёт фокус тому окну, где он был.
+        WlrLayershell.keyboardFocus: root.activePanel !== ""
                                      ? WlrKeyboardFocus.Exclusive
                                      : WlrKeyboardFocus.OnDemand
 
@@ -593,23 +592,40 @@ ShellRoot {
                      && (!chrome.floating
                          || (win.barAnchor ? root.barCenterReady : root.pointerKnown))
 
-            // Появление и исчезновение: панель сначала проявляется и чуть
-            // расправляется, а перед закрытием — гаснет и сжимается. Когда
-            // анимация закончилась, панель прячется.
-            opacity: root.activePanel === "" ? 0 : (root.closing ? 0 : 1)
-            scale: root.closing ? 0.97 : 1
+            // Появление и исчезновение: панель проявляется, слегка
+            // расправляется и приподнимается; перед закрытием — наоборот.
+            // Движения заметны глазом, поэтому и сдвиг, и масштаб.
+            readonly property bool isHidden: root.activePanel === "" || root.closing
+
+            opacity: chrome.isHidden ? 0 : 1
+            scale: chrome.isHidden ? 0.96 : 1
             transformOrigin: Item.Center
+            transform: [
+                Translate {
+                    id: chromeShift
+                    y: chrome.isHidden ? 12 : 0
+
+                    // Behavior на transform.y не работает: transform — список
+                    // (grouped property). Анимируем сам Translate.
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: Animations.panels ? 240 : 0
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+            ]
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: Animations.panels ? 160 : 0
+                    duration: Animations.panels ? 240 : 0
                     easing.type: Easing.OutCubic
                 }
             }
 
             Behavior on scale {
                 NumberAnimation {
-                    duration: Animations.panels ? 160 : 0
+                    duration: Animations.panels ? 240 : 0
                     easing.type: Easing.OutCubic
                 }
             }
