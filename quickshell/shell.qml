@@ -393,8 +393,9 @@ ShellRoot {
                                             || root.panelFromBar)
         // виджет открыт кнопкой бара: карточка встаёт по центру кнопки
         readonly property bool barAnchor: win.overlay && root.activePanel !== "emoji"
-        // настройки: центр по обеим осям
+        // настройки и переключатель окон: центр по обеим осям
         readonly property bool centering: root.activePanel === "settings"
+                                      || root.activePanel === "switcher"
 
         // Панели у края (погода, переключение окон, плеер, календарь)
         // держатся той же стороны, что и бар: бар снизу — панель уходит
@@ -404,6 +405,7 @@ ShellRoot {
                                          && root.activePanel !== "settings"
                                          && root.activePanel !== "launcher"
                                          && root.activePanel !== "search"
+                                         && root.activePanel !== "switcher"
         // панель всегда привязана к верхнему краю, а «по центру» получается
         // большим отступом: так положение не зависит от того, как compositor
         // трактует окно без привязок
@@ -416,6 +418,7 @@ ShellRoot {
                         ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
                         : (root.activePanel === "search" ? win.spotlightTop
                            : (root.activePanel === "settings"
+                              || root.activePanel === "switcher"
                               ? Math.max(40, (screenHeight - win.implicitHeight) / 2)
                               : 40)))
 
@@ -467,7 +470,7 @@ ShellRoot {
                                              : (root.activePanel === "emoji" ? 470
                                              : (root.activePanel === "search" ? 620
                                              : ((root.activePanel === "calendar" || root.activePanel === "weather") ? 420
-                                             : (root.activePanel === "switcher" ? 700 : 380)))))))
+                                             : (root.activePanel === "switcher" ? 460 : 380)))))))
         implicitWidth: win.overlay ? win.screenWidth : win.contentWidth
         // у эмодзи поверхность во весь экран: только так композитор скажет,
         // где курсор

@@ -122,22 +122,44 @@ ColumnLayout {
         }
     }
 
-    Label {
+    // ── шапка ─────────────────────────────────────────────────────────────
+    RowLayout {
         Layout.fillWidth: true
-        visible: page.windows.length === 0
-        text: Lang.t("Нет открытых окон")
-        color: Colors.dim
-        font.pixelSize: 12
+        visible: page.windows.length > 0
+        spacing: 8
+
+        Label {
+            text: "\uf108"
+            color: Colors.accent
+            font.pixelSize: 13
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: Lang.t("Переключение окон")
+            color: Colors.text
+            font.pixelSize: 13
+            font.bold: true
+        }
+
+        Label {
+            text: page.windows.length
+            color: Colors.dim
+            font.pixelSize: 11
+        }
     }
 
+    // ── список окон ───────────────────────────────────────────────────────
     ListView {
         id: strip
 
         Layout.fillWidth: true
-        implicitHeight: 92
+        Layout.preferredHeight: page.windows.length === 0
+                             ? 34
+                             : Math.min(page.windows.length, 8) * 46 + 6
         visible: page.windows.length > 0
-        orientation: ListView.Horizontal
-        spacing: 8
+        orientation: ListView.Vertical
+        spacing: 2
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         model: page.windows
@@ -148,65 +170,84 @@ ColumnLayout {
             required property var modelData
             required property int index
 
-            width: 158
-            height: strip.height - 2
+            width: strip.width
+            height: 44
 
             readonly property bool current: page.selected === card.index
 
             Rectangle {
                 anchors.fill: parent
                 radius: 8
-                color: card.current ? Colors.selected : Colors.base
+                color: card.current ? Colors.selected : "transparent"
                 border.width: 1
-                border.color: card.current ? Colors.accent : Colors.border
+                border.color: card.current ? Colors.accent : "transparent"
             }
 
-            ColumnLayout {
+            // слева — полоска активного окна
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: 4
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3
+                height: card.current ? 22 : 0
+                radius: 1.5
+                color: Colors.accent
+            }
+
+            RowLayout {
                 anchors.fill: parent
-                anchors.margins: 9
-                spacing: 3
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 10
 
-                RowLayout {
+                Label {
+                    text: page.appIcon(card.modelData.app)
+                    color: card.current ? Colors.accent : Colors.muted
+                    font.pixelSize: 15
+                }
+
+                ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 6
+                    spacing: 1
 
-                    Label {
-                        text: page.appIcon(card.modelData.app)
-                        color: card.current ? Colors.accent : Colors.muted
-                        font.pixelSize: 13
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        Label {
+                            text: card.modelData.app || Lang.t("окно")
+                            color: card.current ? Colors.text : Colors.muted
+                            font.pixelSize: 11
+                            font.bold: card.current
+                            elide: Text.ElideRight
+                        }
+
+                        Label {
+                            text: card.modelData.focused ? Lang.t("активное") : ""
+                            color: Colors.accent
+                            font.pixelSize: 9
+                        }
                     }
+
                     Label {
                         Layout.fillWidth: true
-                        text: card.modelData.app || Lang.t("окно")
-                        color: card.current ? Colors.text : Colors.muted
-                        font.pixelSize: 10
+                        text: card.modelData.title || ""
+                        color: card.current ? Colors.text : Qt.alpha(Colors.dim, 0.9)
+                        font.pixelSize: 11
                         elide: Text.ElideRight
                     }
-                    Label {
-                        visible: card.modelData.focused
-                        text: "\uf111"
-                        color: Colors.accent
-                        font.pixelSize: 6
-                    }
                 }
 
                 Label {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    text: card.modelData.title || ""
-                    color: card.current ? Colors.text : Colors.dim
-                    font.pixelSize: 10
-                    wrapMode: Text.WrapAnywhere
-                    maximumLineCount: 2
-                    elide: Text.ElideRight
-                }
-
-                Label {
-                    Layout.fillWidth: true
-                    text: (card.index + 1) + "  ·  " + (card.modelData.workspace || "")
+                    text: card.modelData.workspace || ""
                     color: Qt.alpha(Colors.dim, 0.7)
-                    font.pixelSize: 9
-                    elide: Text.ElideRight
+                    font.pixelSize: 10
+                }
+
+                Label {
+                    text: (card.index + 1)
+                    color: card.current ? Colors.accent : Qt.alpha(Colors.dim, 0.6)
+                    font.pixelSize: 10
                 }
             }
 
@@ -221,10 +262,19 @@ ColumnLayout {
 
     Label {
         Layout.fillWidth: true
-        visible: page.windows.length > 0
-        text: Lang.t("← → выбрать") + "  ·  " + Lang.t("Enter перейти") + "  ·  "
-              + Lang.t("1–9 сразу") + "  ·  Esc " + Lang.t("закрыть")
+        visible: page.windows.length === 0
+        text: Lang.t("Нет открытых окон")
         color: Colors.dim
+        font.pixelSize: 12
+    }
+
+    // ── подсказка ──────────────────────────────────────────────────────────
+    Label {
+        Layout.fillWidth: true
+        visible: page.windows.length > 0
+        text: Lang.t("↑ ↓ выбрать") + "  ·  " + Lang.t("Enter перейти") + "  ·  "
+              + Lang.t("1–9 сразу") + "  ·  Esc " + Lang.t("закрыть")
+        color: Qt.alpha(Colors.dim, 0.8)
         font.pixelSize: 9
     }
 }
