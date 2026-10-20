@@ -269,8 +269,9 @@ weather module in the bar or `qs ipc call panel bar weather`. Every widget opene
 from waybar lands exactly under its own button (the shell takes its position from
 the cursor), or above it when the bar sits at the bottom.
 
-**Typewriter text** — in every input field (search, settings, launcher, timer)
-the characters appear one by one, as if being typed.
+**Smooth caret** — in every input field (search, settings, launcher, timer) the
+caret does not jump but glides to its new place, like in recent Word; the text
+itself is left alone and nothing is drawn over it.
 
 **Calendar and timers** — click the clock in the bar (or `Super+C`): a month with
 today highlighted and timers. There can be **several at once**, each with its own

@@ -106,9 +106,7 @@ ColumnLayout {
             TypeInput {
                 id: input
                 anchors.fill: parent
-                fieldColor: Colors.surface
                 textColor: Colors.text
-                placeholderColor: Colors.dim
                 fontPixelSize: 14
                 placeholder: Lang.t("поиск: приложения, окна, файлы, 2+2*3, «:» эмодзи, «>» команда")
                 onEdited: value => search.query = value

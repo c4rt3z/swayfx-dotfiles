@@ -377,9 +377,7 @@ ColumnLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 9
                 anchors.rightMargin: 9
-                fieldColor: Colors.base
                 textColor: Colors.text
-                placeholderColor: Colors.dim
                 fontPixelSize: 12
                 placeholder: Lang.t("своё время: 25 или 1:30")
                 text: page.manual

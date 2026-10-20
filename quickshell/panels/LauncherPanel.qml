@@ -177,7 +177,6 @@ ColumnLayout {
                 id: input
                 anchors.fill: parent
                 textColor: Colors.text
-                placeholderColor: Colors.dim
                 fontPixelSize: 13
                 placeholder: Lang.t("поиск приложений, или > команда")
                 onEdited: value => launcher.query = value

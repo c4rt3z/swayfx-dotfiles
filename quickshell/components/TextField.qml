@@ -58,7 +58,7 @@ Item {
     // подсказка поля
     Label {
         anchors.left: parent.left
-        anchors.leftMargin: 32
+        anchors.leftMargin: 36
         anchors.right: clearButton.visible ? clearButton.left : parent.right
         anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
@@ -78,9 +78,7 @@ Item {
         anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
         fontPixelSize: 12
-        fieldColor: "transparent"
         textColor: Colors.text
-        placeholderColor: "transparent"
         onEdited: value => field.edited(value)
         onAccepted: field.accepted()
     }
