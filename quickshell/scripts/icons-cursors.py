@@ -36,6 +36,43 @@ def gsettings_set(key, value):
                    check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def gtk_set_cursor(name, size=24):
+    """Прописать курсор в settings.ini GTK.
+
+    Это главное: GTK читает курсор из своего settings.ini, а не из gsettings
+    (gsettings отдаёт его через портал, и то не всегда). Если в ini тема
+    закреплена, выбор в настройках молча ничего не меняет.
+    """
+    for version in ("gtk-3.0", "gtk-4.0"):
+        path = f"{HOME}/.config/{version}/settings.ini"
+        try:
+            with open(path, encoding="utf-8") as fh:
+                lines = fh.read().splitlines()
+        except OSError:
+            continue
+        out = []
+        seen = set()
+        for line in lines:
+            key = line.split("=", 1)[0].strip()
+            if key == "gtk-cursor-theme-name":
+                out.append(f"gtk-cursor-theme-name={name}")
+                seen.add(key)
+            elif key == "gtk-cursor-theme-size":
+                out.append(f"gtk-cursor-theme-size={size}")
+                seen.add(key)
+            else:
+                out.append(line)
+        if "gtk-cursor-theme-name" not in seen:
+            out.append(f"gtk-cursor-theme-name={name}")
+        if "gtk-cursor-theme-size" not in seen:
+            out.append(f"gtk-cursor-theme-size={size}")
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(out).rstrip("\n") + "\n")
+        except OSError:
+            pass
+
+
 def themes():
     """Имя темы -> есть ли в ней курсоры."""
     found = {}
@@ -85,6 +122,11 @@ def main(argv):
             gsettings_set("icon-theme", name)
         elif what == "cursors":
             gsettings_set("cursor-theme", name)
+            try:
+                size = int(gsettings_get("cursor-size") or 24)
+            except ValueError:
+                size = 24
+            gtk_set_cursor(name, size)
         else:
             return 2
         print(json.dumps(state(), ensure_ascii=False))
