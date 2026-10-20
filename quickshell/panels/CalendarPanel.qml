@@ -371,36 +371,20 @@ ColumnLayout {
             border.width: 1
             border.color: manualInput.activeFocus ? Colors.accent : Colors.border
 
-            Label {
-                anchors.fill: parent
-                anchors.leftMargin: 9
-                verticalAlignment: Text.AlignVCenter
-                visible: manualInput.text === ""
-                text: Lang.t("своё время: 25 или 1:30")
-                color: Colors.dim
-                font.pixelSize: 11
-            }
-
-            TextInput {
+            // Поле с печатающимся текстом
+            TypeInput {
                 id: manualInput
                 anchors.fill: parent
                 anchors.leftMargin: 9
                 anchors.rightMargin: 9
-                verticalAlignment: TextInput.AlignVCenter
-                color: Colors.text
-                font.family: Fonts.panelFamily
-                font.pixelSize: 12
-                selectionColor: Colors.accent
-                selectedTextColor: Colors.onAccent
-                selectByMouse: true
+                fieldColor: Colors.base
+                textColor: Colors.text
+                placeholderColor: Colors.dim
+                fontPixelSize: 12
+                placeholder: Lang.t("своё время: 25 или 1:30")
                 text: page.manual
-                onTextChanged: page.manual = text
+                onEdited: value => page.manual = value
                 onAccepted: page.startManual()
-
-                cursorDelegate: Rectangle {
-                    width: 2
-                    color: Colors.accent
-                }
             }
         }
 

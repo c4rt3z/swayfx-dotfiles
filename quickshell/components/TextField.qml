@@ -55,7 +55,7 @@ Item {
         color: input.activeFocus ? Colors.accent : Colors.dim
     }
 
-    // плейсхолдер — под полем ввода, иначе он перехватывал бы щелчки
+    // подсказка поля
     Label {
         anchors.left: parent.left
         anchors.leftMargin: 32
@@ -69,26 +69,20 @@ Item {
         elide: Text.ElideRight
     }
 
-    TextInput {
+    // Поле ввода с печатающимся текстом — тот же компонент, что и в панелях
+    TypeInput {
         id: input
         anchors.left: parent.left
         anchors.leftMargin: 32
         anchors.right: clearButton.visible ? clearButton.left : parent.right
         anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
-        font.family: Fonts.panelFamily
-        font.pixelSize: 12
-        color: Colors.text
-        selectionColor: Colors.accent
-        selectedTextColor: Colors.onAccent
-        selectByMouse: true
-        onTextChanged: field.edited(text)
+        fontPixelSize: 12
+        fieldColor: "transparent"
+        textColor: Colors.text
+        placeholderColor: "transparent"
+        onEdited: value => field.edited(value)
         onAccepted: field.accepted()
-
-        cursorDelegate: Rectangle {
-            width: 2
-            color: Colors.accent
-        }
     }
 
     Label {

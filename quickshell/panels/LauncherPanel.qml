@@ -172,68 +172,17 @@ ColumnLayout {
             anchors.leftMargin: 12
             anchors.rightMargin: 12
 
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: input.text === ""
-                text: Lang.t("поиск приложений, или > команда")
-                color: Colors.dim
-                font.pixelSize: 13
-            }
-
-            TextInput {
+            // Поле с печатающимся текстом
+            TypeInput {
                 id: input
                 anchors.fill: parent
-                verticalAlignment: TextInput.AlignVCenter
-                color: Colors.text
-                font.family: Fonts.panelFamily
-                font.pixelSize: 14
-                selectionColor: Colors.accent
-                selectedTextColor: Colors.onAccent
-                selectByMouse: false
-                onTextChanged: launcher.query = text
+                textColor: Colors.text
+                placeholderColor: Colors.dim
+                fontPixelSize: 13
+                placeholder: Lang.t("поиск приложений, или > команда")
+                onEdited: value => launcher.query = value
                 onAccepted: launcher.activate(-1)
-
-                cursorDelegate: Rectangle {
-                    width: 2
-                    color: Colors.accent
-                }
-
-                Keys.onPressed: event => {
-                    switch (event.key) {
-                    case Qt.Key_Down:
-                    case Qt.Key_Tab:
-                        launcher.move(1);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Up:
-                    case Qt.Key_Backtab:
-                        launcher.move(-1);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_PageDown:
-                        launcher.move(launcher.maxRows);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_PageUp:
-                        launcher.move(-launcher.maxRows);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Home:
-                        launcher.selected = 0;
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_End:
-                        launcher.selected = launcher.results.length - 1;
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Escape:
-                        launcher.close();
-                        event.accepted = true;
-                        break;
-                    }
-                }
-            }
-        }
+            }        }
     }
 
     // ── список ─────────────────────────────────────────────────────────────

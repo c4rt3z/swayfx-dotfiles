@@ -102,34 +102,20 @@ ColumnLayout {
             anchors.leftMargin: 12
             anchors.rightMargin: 12
 
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: input.text === ""
-                text: Lang.t("поиск: приложения, окна, файлы, 2+2*3, «:» эмодзи, «>» команда")
-                color: Colors.dim
-                font.pixelSize: 13
-            }
-
-            TextInput {
+            // Поле с печатающимся текстом: символы проявляются по одному
+            TypeInput {
                 id: input
                 anchors.fill: parent
-                verticalAlignment: TextInput.AlignVCenter
-                color: Colors.text
-                font.family: Fonts.panelFamily
-                font.pixelSize: 14
-                selectionColor: Colors.accent
-                selectedTextColor: Colors.onAccent
-                selectByMouse: false
-                onTextChanged: search.query = text
+                fieldColor: Colors.surface
+                textColor: Colors.text
+                placeholderColor: Colors.dim
+                fontPixelSize: 14
+                placeholder: Lang.t("поиск: приложения, окна, файлы, 2+2*3, «:» эмодзи, «>» команда")
+                onEdited: value => search.query = value
                 onAccepted: search.activate(-1)
 
-                cursorDelegate: Rectangle {
-                    width: 2
-                    color: Colors.accent
-                }
-
-                Keys.onPressed: event => {
-                    switch (event.key) {
+                onKeyPressed: (key, event) => {
+                    switch (key) {
                     case Qt.Key_Down:
                     case Qt.Key_Tab:
                         search.move(1);
