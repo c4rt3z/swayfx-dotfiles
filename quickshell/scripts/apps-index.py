@@ -251,6 +251,37 @@ def collect(icon_files):
                     # пункты контекстного меню приложения (Actions= в .desktop)
                     "actions": parse_actions(path, terminal),
                 }
+    # Свои команды: ~/.config/quickshell/commands/*.sh
+    # Имя файла — заголовок (подчёркивания заменяем пробелами), первая строка
+    # с # — пояснение. Команды попадают и в поиск, и в меню запуска.
+    cmd_dir = f"{HOME}/.config/quickshell/commands"
+    if os.path.isdir(cmd_dir):
+        for fn in sorted(os.listdir(cmd_dir)):
+            if not fn.endswith(".sh"):
+                continue
+            path = os.path.join(cmd_dir, fn)
+            stem = fn[:-3]
+            label = stem.replace("_", " ").replace("-", " ").strip() or stem
+            desc = ""
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    first = fh.readline().strip()
+                if first.startswith("#"):
+                    desc = first.lstrip("#").strip()
+            except OSError:
+                pass
+            seen["cmd-" + stem] = {
+                "id": "cmd-" + stem,
+                "name": label,
+                "comment": desc or "своя команда",
+                "exec": f"sh {path}",
+                "terminal": True,
+                "icon": "",
+                "mime": "",
+                "categories": "",
+                "search": (label + " " + desc).lower(),
+                "actions": [],
+            }
     items = sorted(seen.values(), key=lambda a: a["name"].casefold())
     return {"items": items}
 

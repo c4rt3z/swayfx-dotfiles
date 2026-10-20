@@ -1,0 +1,43 @@
+{
+ "version": 1,
+ "files": {
+  "sidebar": {
+   "side": "left",
+   "width": 16,
+   "labels": false,
+   "grid": "3x2",
+   "widgets": {
+    "weather": true,
+    "now": true,
+    "session": true,
+    "shots": true,
+    "clipboard": true,
+    "notifications": true
+   }
+  },
+  "animations": {
+   "window_ms": 220,
+   "panels": true,
+   "sidebar": true,
+   "toasts": true
+  },
+  "fonts": {
+   "gtk_backup": "Noto Sans 10",
+   "panels": "",
+   "ui": "",
+   "waybar": ""
+  },
+  "weather": {
+   "city": "Гомель",
+   "api_key": "",
+   "provider": "auto",
+   "units": "metric"
+  },
+  "sleep": {
+   "ac_minutes": 0,
+   "battery_minutes": 0
+  },
+  "bar_mode": "floating",
+  "language": "ru"
+ }
+}

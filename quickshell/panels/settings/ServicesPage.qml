@@ -20,6 +20,13 @@ ColumnLayout {
 
     readonly property string sleepScript: (Quickshell.env("HOME") ?? "")
                                         + "/.config/quickshell/scripts/sleep-policy.py"
+    readonly property string doctorScript: (Quickshell.env("HOME") ?? "")
+                                         + "/.config/quickshell/scripts/doctor.py"
+    readonly property string exportScript: (Quickshell.env("HOME") ?? "")
+                                         + "/.config/quickshell/scripts/settings-export.py"
+    property string doctorResult: ""
+    property bool doctorOk: true
+    property string exportNote: ""
     property var sleepState: ({ ac_minutes: 0, battery_minutes: 0, source: "ac" })
     property string sleepKey: "ac_minutes"
     property int sleepValue: 0
@@ -161,6 +168,186 @@ ColumnLayout {
     Label {
         Layout.fillWidth: true
         text: Lang.t("Перезапуск идёт той же командой, которой службу поднимает sway, — она видна в ~/.config/sway/config. quickshell после перезапуска открывает панели заново, поэтому окно настроек закроется.")
+        font.pixelSize: 10
+        color: Qt.alpha(Colors.dim, 0.8)
+        wrapMode: Text.WordWrap
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: Colors.border
+    }
+
+    // ── проверка и перенос настроек ───────────────────────────────────────
+    Label {
+        text: Lang.t("Проверка и перенос")
+        font.pixelSize: 11
+        font.bold: true
+        color: Colors.dim
+    }
+
+    Process {
+        id: doctorProc
+        command: ["python3", page.doctorScript]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const raw = (text || "").split("\n").filter(l => l.trim() !== "");
+                page.doctorResult = raw.slice(1).join("\n");
+                page.doctorOk = raw.length > 0 && raw[raw.length - 1].indexOf("всё в порядке") >= 0;
+            }
+        }
+    }
+
+    Process {
+        id: exportProc
+        command: ["python3", page.exportScript, "export"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text || "{}");
+                    page.exportNote = data.ok
+                        ? Lang.t("Сохранено: ") + (data.file || "").replace("~", "") 
+                        : Lang.t("Не получилось сохранить");
+                } catch (e) {
+                    page.exportNote = Lang.t("Не получилось сохранить");
+                }
+            }
+        }
+    }
+
+    Process {
+        id: importProc
+        command: ["python3", page.exportScript, "import"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text || "{}");
+                    page.exportNote = data.ok
+                        ? Lang.t("Восстановлено настроек: ") + data.restored
+                        : Lang.t("Импортировать нечего");
+                } catch (e) {
+                    page.exportNote = Lang.t("Импортировать нечего");
+                }
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        Item {
+            Layout.fillWidth: true
+            implicitHeight: 30
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 7
+                color: doctorHover.containsMouse ? Colors.selected : "transparent"
+                border.width: 1
+                border.color: doctorHover.containsMouse ? Colors.accent : Colors.divider
+            }
+
+            Label {
+                anchors.centerIn: parent
+                text: Lang.t("Проверить дотфайлы")
+                color: doctorHover.containsMouse ? Colors.text : Colors.muted
+                font.pixelSize: 11
+            }
+
+            MouseArea {
+                id: doctorHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: doctorProc.running = false, doctorProc.running = true
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            implicitHeight: 30
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 7
+                color: exportHover.containsMouse ? Colors.selected : "transparent"
+                border.width: 1
+                border.color: exportHover.containsMouse ? Colors.accent : Colors.divider
+            }
+
+            Label {
+                anchors.centerIn: parent
+                text: Lang.t("Выгрузить настройки")
+                color: exportHover.containsMouse ? Colors.text : Colors.muted
+                font.pixelSize: 11
+            }
+
+            MouseArea {
+                id: exportHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: exportProc.running = false, exportProc.running = true
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            implicitHeight: 30
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 7
+                color: importHover.containsMouse ? Colors.selected : "transparent"
+                border.width: 1
+                border.color: importHover.containsMouse ? Colors.accent : Colors.divider
+            }
+
+            Label {
+                anchors.centerIn: parent
+                text: Lang.t("Загрузить настройки")
+                color: importHover.containsMouse ? Colors.text : Colors.muted
+                font.pixelSize: 11
+            }
+
+            MouseArea {
+                id: importHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: importProc.running = false, importProc.running = true
+            }
+        }
+    }
+
+    Label {
+        Layout.fillWidth: true
+        visible: page.doctorResult !== ""
+        text: page.doctorResult
+        font.pixelSize: 10
+        font.family: Fonts.panelFamily
+        color: page.doctorOk ? Colors.dim : Colors.red
+        wrapMode: Text.WordWrap
+    }
+
+    Label {
+        Layout.fillWidth: true
+        visible: page.exportNote !== ""
+        text: page.exportNote
+        font.pixelSize: 10
+        color: Colors.dim
+        wrapMode: Text.WordWrap
+    }
+
+    Label {
+        Layout.fillWidth: true
+        text: Lang.t("Проверка смотрит переводы, шрифты, тему значков, скрипты, "
+                     + "синглтоны и сохранённые настройки. Выгрузка складывает "
+                     + "сайдбар, анимации, шрифты, погоду, вид бара, сон и язык в "
+                     + "один файл ~/.config/quickshell/export.json — его можно "
+                     + "перенести на другую машину.")
         font.pixelSize: 10
         color: Qt.alpha(Colors.dim, 0.8)
         wrapMode: Text.WordWrap

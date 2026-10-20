@@ -9,10 +9,10 @@
 window {
     margin: 0;
     padding: 8px;
-    border: 1px solid #939181;
+    border: 1px solid #938f99;
     border-radius: 10px;
-    background-color: alpha(#212018, 0.92);
-    color: #e6e2d5;
+    background-color: alpha(#201f25, 0.92);
+    color: #e5e1e9;
 }
 
 #outer-box {
@@ -24,10 +24,10 @@ window {
 #input {
     margin: 0 0 8px 0;
     padding: 8px 10px;
-    border: 1px solid #939181;
+    border: 1px solid #938f99;
     border-radius: 0;
-    background-color: #14140c;
-    color: #cdca75;
+    background-color: #141318;
+    color: #c9beff;
 }
 
 #scroll {
@@ -50,16 +50,16 @@ window {
 }
 
 #entry #text {
-    color: #e6e2d5;
+    color: #e5e1e9;
 }
 
 /* полоска акцента у выбранной строки, как в лаунчере quickshell */
 #entry:selected {
-    background-color: #cdca75;
+    background-color: #c9beff;
 }
 
 #entry:selected #text {
-    color: #333200;
+    color: #31285f;
 }
 
 #img {

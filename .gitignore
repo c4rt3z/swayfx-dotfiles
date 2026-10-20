@@ -14,6 +14,7 @@
 
 !environment.d/
 !quickshell/
+!quickshell/commands/
 !sway/
 !swaylock/
 !waybar/
@@ -49,6 +50,8 @@ wallpaper/slideshow.json
 waybar/mode
 # настройки анимаций (окна, панели, сайдбар, уведомления)
 quickshell/animations.json
+# свои команды пользователя (README в папке — наш)
+quickshell/commands/*.sh
 
 # сторонние темы alacritty — отдельный репозиторий, ставится клоном
 # (см. README: ~/.config/alacritty/themes)
