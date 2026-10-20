@@ -86,7 +86,10 @@ ColumnLayout {
             // фильтрует разделы, Enter открывает первый подходящий.
             TextField {
                 id: searchField
-                Layout.fillWidth: true
+                // боковая колонка — обычный Column, а не ColumnLayout, поэтому
+                // ширину задаём так же, как у строк разделов
+                width: sidebar.width
+                height: 30
                 placeholder: Lang.t("Поиск по настройкам")
                 onEdited: value => panel.query = value
                 onAccepted: {
