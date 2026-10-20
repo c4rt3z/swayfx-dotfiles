@@ -80,6 +80,15 @@ ColumnLayout {
         setProcess.running = true;
     }
 
+    // Под-вкладки: без них страница «Внешний вид» — это три экрана прокрутки.
+    property string tab: "wallpaper"
+
+    readonly property var tabs: [
+        { key: "wallpaper", name: Lang.t("Обои") },
+        { key: "fonts", name: Lang.t("Шрифты") },
+        { key: "icons", name: Lang.t("Значки и курсоры") }
+    ]
+
     Component.onCompleted: {
         listProcess.running = true;
         themesProc.running = true;
@@ -108,9 +117,57 @@ ColumnLayout {
         }
     }
 
+    // переключатель под-вкладок
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.bottomMargin: 4
+        spacing: 6
+
+        Repeater {
+            model: page.tabs
+
+            delegate: Item {
+                id: tabRow
+
+                required property var modelData
+
+                readonly property bool current: page.tab === tabRow.modelData.key
+
+                Layout.fillWidth: true
+                implicitHeight: 30
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 7
+                    color: tabRow.current ? Colors.selected : "transparent"
+                    border.width: 1
+                    border.color: tabRow.current ? Colors.accent
+                                : (tabHover.containsMouse ? Colors.border : Colors.divider)
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    text: tabRow.modelData.name
+                    color: tabRow.current ? Colors.text : Colors.muted
+                    font.pixelSize: 12
+                    font.bold: tabRow.current
+                }
+
+                MouseArea {
+                    id: tabHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: page.tab = tabRow.modelData.key
+                }
+            }
+        }
+    }
+
     AppearanceSettings {
         id: appearance
         Layout.fillWidth: true
+        visible: page.tab === "wallpaper"
     }
 
     // ── Шрифты ─────────────────────────────────────────────────────────────
@@ -149,6 +206,7 @@ ColumnLayout {
     // в обычный Column, иначе страница «Внешний вид» обрезается снизу.
     Item {
         id: fontsBlock
+        visible: page.tab === "fonts"
         Layout.fillWidth: true
         implicitHeight: fontSections.implicitHeight
 
@@ -382,86 +440,92 @@ ColumnLayout {
     }
 
     // ── значки и курсоры ───────────────────────────────────────────────────
-    Rectangle {
+    ColumnLayout {
+        id: iconsBlock
         Layout.fillWidth: true
-        Layout.preferredHeight: 1
-        color: Colors.border
-    }
+        visible: page.tab === "icons"
+        spacing: 10
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Colors.border
+        }
 
-    Label {
-        text: Lang.t("Значки и курсоры")
-        font.pixelSize: 11
-        font.bold: true
-        color: Colors.dim
-    }
+        Label {
+            text: Lang.t("Значки и курсоры")
+            font.pixelSize: 11
+            font.bold: true
+            color: Colors.dim
+        }
 
-    Process {
-        id: themesProc
-        command: ["python3", page.themeScript, "list"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const data = JSON.parse(text || "{}");
-                    page.themes = data;
-                } catch (e) {
-                    page.themes = ({ icons: [], cursors: [], current_icon: "", current_cursor: "" });
+        Process {
+            id: themesProc
+            command: ["python3", page.themeScript, "list"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(text || "{}");
+                        page.themes = data;
+                    } catch (e) {
+                        page.themes = ({ icons: [], cursors: [], current_icon: "", current_cursor: "" });
+                    }
                 }
             }
         }
-    }
 
-    Process {
-        id: themeSetProc
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    page.themes = JSON.parse(text || "{}");
-                } catch (e) {
+        Process {
+            id: themeSetProc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        page.themes = JSON.parse(text || "{}");
+                    } catch (e) {
+                    }
                 }
             }
         }
-    }
 
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 18
-
-        ThemePicker {
+        RowLayout {
             Layout.fillWidth: true
-            title: Lang.t("Темы значков")
-            items: page.themes.icons || []
-            current: page.themes.current_icon || ""
-            onPicked: name => {
-                themeSetProc.command = ["python3", page.themeScript, "set", "icons", name];
-                themeSetProc.running = false;
-                themeSetProc.running = true;
+            spacing: 18
+
+            ThemePicker {
+                Layout.fillWidth: true
+                title: Lang.t("Темы значков")
+                items: page.themes.icons || []
+                current: page.themes.current_icon || ""
+                onPicked: name => {
+                    themeSetProc.command = ["python3", page.themeScript, "set", "icons", name];
+                    themeSetProc.running = false;
+                    themeSetProc.running = true;
+                }
+            }
+
+            ThemePicker {
+                Layout.fillWidth: true
+                title: Lang.t("Курсоры")
+                items: page.themes.cursors || []
+                current: page.themes.current_cursor || ""
+                onPicked: name => {
+                    themeSetProc.command = ["python3", page.themeScript, "set", "cursors", name];
+                    themeSetProc.running = false;
+                    themeSetProc.running = true;
+                }
             }
         }
 
-        ThemePicker {
+        Label {
             Layout.fillWidth: true
-            title: Lang.t("Курсоры")
-            items: page.themes.cursors || []
-            current: page.themes.current_cursor || ""
-            onPicked: name => {
-                themeSetProc.command = ["python3", page.themeScript, "set", "cursors", name];
-                themeSetProc.running = false;
-                themeSetProc.running = true;
-            }
+            text: Lang.t("Как это применяется: выбор сразу уходит в gsettings, и "
+                         + "GTK-программы подхватывают его сами — перезапускать их "
+                         + "не нужно. Значки в панелях и в баре нарисованы глифами "
+                         + "Nerd Font, поэтому тема значков их не касается. Курсор "
+                         + "над рабочим столом — это курсор самого sway, тема курсоров "
+                         + "меняет курсор внутри приложений. Qt-программы берут "
+                         + "оформление из qt5ct/qt6ct — там своя настройка.")
+            font.pixelSize: 10
+            color: Qt.alpha(Colors.dim, 0.8)
+            wrapMode: Text.WordWrap
         }
-    }
-
-    Label {
-        Layout.fillWidth: true
-        text: Lang.t("Как это применяется: выбор сразу уходит в gsettings, и "
-                     + "GTK-программы подхватывают его сами — перезапускать их "
-                     + "не нужно. Значки в панелях и в баре нарисованы глифами "
-                     + "Nerd Font, поэтому тема значков их не касается. Курсор "
-                     + "над рабочим столом — это курсор самого sway, тема курсоров "
-                     + "меняет курсор внутри приложений. Qt-программы берут "
-                     + "оформление из qt5ct/qt6ct — там своя настройка.")
-        font.pixelSize: 10
-        color: Qt.alpha(Colors.dim, 0.8)
-        wrapMode: Text.WordWrap
     }
 }
