@@ -167,9 +167,9 @@ wallpaper gives light applications and a dark one gives dark applications. The
 ## Settings (`Super+,`)
 
 One quickshell window, twelve sections — everything writes straight into the
-configs. Above the section list there is a search: it matches names and meaning
-(“шрифт” → “Appearance”, “эквалайзер” → “Sound”, “буфер” → “Sidebar”); Enter
-opens the first match.
+configs. At the top, across the full width, there is a search: it matches names
+and meaning (“шрифт” → “Appearance”, “эквалайзер” → “Sound”, “буфер” →
+“Sidebar”); Enter opens the first match.
 
 | Section | What it does |
 | --- | --- |

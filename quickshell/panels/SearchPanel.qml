@@ -24,7 +24,7 @@ ColumnLayout {
     property int selected: 0
 
     readonly property int rowHeight: 32
-    readonly property int maxRows: 10
+    readonly property int maxRows: 8
 
     spacing: 10
 

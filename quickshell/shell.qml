@@ -158,14 +158,32 @@ ShellRoot {
     }
 
     // Закрыть панель с анимацией: гасим карточку, по её концу прячем панель.
+    //
+    // Прячем по таймеру, а не по сигналу анимации: сигнал может и не прийти
+    // (анимацию прервали или значение не изменилось), и тогда панель осталась
+    // бы «открытой» — невидимой, но с клавиатурой: окна переставали отвечать
+    // на клавиши, пока панель не закрывали ещё раз.
     function closePanel(): void {
         if (root.activePanel === "")
             return;
         if (Animations.panels && !root.closing) {
             root.closing = true;
+            closeTimer.restart();
         } else {
             root.closing = false;
             root.activePanel = "";
+        }
+    }
+
+    Timer {
+        id: closeTimer
+        interval: 170
+        repeat: false
+        onTriggered: {
+            if (root.closing) {
+                root.closing = false;
+                root.activePanel = "";
+            }
         }
     }
 
@@ -395,9 +413,8 @@ ShellRoot {
         readonly property real screenWidth: Quickshell.screens.length > 0
                                             ? Quickshell.screens[0].width : 1920
 
-        // Spotlight в macOS: окно поиска не вплотную к бару, а заметно ниже —
-        // примерно на четверть экрана.
-        readonly property real spotlightTop: Math.max(40, Math.round(screenHeight * 0.22))
+        // Spotlight: окно поиска — ближе к верху экрана, но не вплотную к бару.
+        readonly property real spotlightTop: Math.max(40, Math.round(screenHeight * 0.12))
 
         // 8 пикселей внутрь от угла активного окна — запасной вариант, если
         // позицию курсора узнать не получилось.
@@ -432,7 +449,7 @@ ShellRoot {
                                              : (root.activePanel === "launcher" ? 620
                                              : (root.activePanel === "music" ? 880
                                              : (root.activePanel === "emoji" ? 470
-                                             : (root.activePanel === "search" ? 680
+                                             : (root.activePanel === "search" ? 620
                                              : ((root.activePanel === "calendar" || root.activePanel === "weather") ? 420
                                              : (root.activePanel === "switcher" ? 700 : 380)))))))
         implicitWidth: win.overlay ? win.screenWidth : win.contentWidth
@@ -570,12 +587,6 @@ ShellRoot {
                 NumberAnimation {
                     duration: Animations.panels ? 160 : 0
                     easing.type: Easing.OutCubic
-                    onFinished: {
-                        if (root.closing) {
-                            root.closing = false;
-                            root.activePanel = "";
-                        }
-                    }
                 }
             }
 
