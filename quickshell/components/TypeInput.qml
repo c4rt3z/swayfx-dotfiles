@@ -8,13 +8,9 @@ import "../singletons"
 // по одной.
 //
 //   • каретка своя, плавно переезжает на новое место (как в свежем Word);
-//   • новая буква проявляется мягким fade, а удалённая — гаснет;
-//   • ничего не перекрывается: буквы стоят на своих местах, каретка —
-//     сразу после последней буквы.
-//
-// Буквы выравниваются по шагу шрифта, поэтому эффект работает только для
-// моноширинного шрифта. Если шрифт пропорциональный, текст рисуется родным
-// способом (без анимации) — чтобы буквы не наезжали друг на друга.
+//   • новая буква проявляется мягким fade, удалённая — гаснет;
+//   • ничего не перекрывается: буквы стоят на своих местах (ширины берём
+//     по метрикам, поэтому работает и с пропорциональным шрифтом).
 Item {
     id: type
 
@@ -39,9 +35,9 @@ Item {
     signal keyPressed(int key, var event)
 
     property bool caretVisible: true
-    property bool monospace: true
-    property real advance: 8
     property string oldText: ""
+    // строка, для которой меряем ширины букв
+    property string probeText: ""
 
     implicitHeight: 30
     implicitWidth: 200
@@ -55,19 +51,28 @@ Item {
         return index >= Math.min(start, end) && index < Math.max(start, end);
     }
 
+    // ширина буквы: у пропорционального шрифта у каждой своя
+    function charWidth(i) {
+        const item = widthProbe.itemAt(i);
+        return item ? item.width : type.advance;
+    }
+
     // применить новый текст: новые буквы проявляются, удалённые гаснут
     function applyText(newText) {
         const old = type.oldText;
         type.oldText = newText;
-        if (!type.monospace)
-            return;
+        type.probeText = newText;
 
         const common = Math.min(old.length, newText.length);
 
         // пропавшие буквы — в призраки, они гаснут на своих местах
         if (newText.length < old.length) {
+            let gx = 0;
+            for (let i = 0; i < newText.length; i++)
+                gx += type.charWidth(i);
             for (let i = newText.length; i < old.length; i++) {
-                ghostModel.append({ ch: old.charAt(i), pos: i * type.advance });
+                ghostModel.append({ ch: old.charAt(i), pos: gx });
+                gx += type.charWidth(i);
             }
             ghostTimer.restart();
         }
@@ -77,11 +82,16 @@ Item {
             if (charModel.count > i)
                 charModel.setProperty(i, "ch", newText.charAt(i));
         }
+
         // новые буквы — с нулевой прозрачностью, чтобы мягко проявиться
+        let pos = 0;
+        for (let i = 0; i < common; i++)
+            pos += type.charWidth(i);
         for (let i = common; i < newText.length; i++) {
-            charModel.append({ ch: newText.charAt(i), pos: i * type.advance,
-                               fresh: true });
+            charModel.append({ ch: newText.charAt(i), pos: pos });
+            pos += type.charWidth(i);
         }
+
         // лишние строки убираем
         while (charModel.count > newText.length)
             charModel.remove(charModel.count - 1);
@@ -92,7 +102,7 @@ Item {
         anchors.fill: parent
         verticalAlignment: TextInput.AlignVCenter
         // текст рисуем сами (по буквам), ввод и выделение — родные
-        color: type.monospace ? "transparent" : type.textColor
+        color: "transparent"
         selectionColor: Colors.accent
         selectedTextColor: Colors.onAccent
         font.family: Fonts.panelFamily
@@ -105,7 +115,7 @@ Item {
         Keys.onPressed: event => type.keyPressed(event.key, event)
     }
 
-    // ширина одного символа: у моноширинного шрифта она одинаковая
+    // ширина одного символа — запасной вариант, если метрики ещё не готовы
     TextMetrics {
         id: narrowMetrics
         font.family: Fonts.panelFamily
@@ -113,16 +123,18 @@ Item {
         text: "i"
     }
 
-    TextMetrics {
-        id: wideMetrics
-        font.family: Fonts.panelFamily
-        font.pixelSize: type.fontPixelSize
-        text: "W"
-    }
+    Component.onCompleted: type.advance = narrowMetrics.width
 
-    Component.onCompleted: {
-        type.monospace = Math.abs(narrowMetrics.width - wideMetrics.width) < 0.6;
-        type.advance = narrowMetrics.width;
+    // скрытые метрики каждой буквы: по ним считаем позиции символов
+    Repeater {
+        id: widthProbe
+        model: type.probeText
+
+        delegate: TextMetrics {
+            font.family: Fonts.panelFamily
+            font.pixelSize: type.fontPixelSize
+            text: modelData
+        }
     }
 
     // буквы основного текста
@@ -137,7 +149,6 @@ Item {
 
             required property string ch
             required property real pos
-            required property bool fresh
 
             x: charItem.pos
             y: (type.height - height) / 2
@@ -145,16 +156,22 @@ Item {
             color: type.inSelection(charItem.index) ? type.selectionColor : type.textColor
             font.family: Fonts.panelFamily
             font.pixelSize: type.fontPixelSize
-            // новая буква проявляется мягко
-            opacity: charItem.fresh ? 0 : 1
 
-            NumberAnimation on opacity {
+            // Новая буква проявляется с нуля: анимация ведёт своё свойство,
+            // а прозрачность следует за ним.
+            property real shade: 0
+            opacity: charItem.shade
+
+            Component.onCompleted: appear.start()
+
+            NumberAnimation {
                 id: appear
+                target: charItem
+                property: "shade"
                 from: 0
                 to: 1
                 duration: type.fadeDuration
                 easing.type: Easing.OutCubic
-                running: charItem.fresh
             }
         }
     }
@@ -167,6 +184,8 @@ Item {
         model: ghostModel
 
         delegate: Text {
+            id: ghostItem
+
             required property string ch
             required property real pos
 
@@ -177,8 +196,16 @@ Item {
             font.family: Fonts.panelFamily
             font.pixelSize: type.fontPixelSize
 
-            NumberAnimation on opacity {
+            // Буква гаснет на своём месте и только потом убирается
+            property real shade: 1
+            opacity: ghostItem.shade
+
+            Component.onCompleted: fade.start()
+
+            NumberAnimation {
                 id: fade
+                target: ghostItem
+                property: "shade"
                 from: 1
                 to: 0
                 duration: type.fadeDuration
@@ -187,7 +214,7 @@ Item {
         }
     }
 
-    // через полсекунды призраков убираем совсем
+    // через fadeDuration призраков убираем совсем
     Timer {
         id: ghostTimer
         interval: type.fadeDuration + 40
@@ -195,19 +222,17 @@ Item {
         onTriggered: ghostModel.clear()
     }
 
-    // где сейчас каретка
-    TextMetrics {
-        id: caretMetrics
-        font.family: Fonts.panelFamily
-        font.pixelSize: type.fontPixelSize
-        text: input.text.substring(0, input.cursorPosition)
+    // где сейчас каретка: сумма ширин букв до позиции курсора
+    property real caretX: {
+        let x = 0;
+        for (let i = 0; i < input.cursorPosition; i++)
+            x += type.charWidth(i);
+        return x;
     }
 
     Rectangle {
         id: caret
-        x: type.monospace
-           ? Math.min(type.advance * input.cursorPosition, type.width)
-           : caretMetrics.width
+        x: Math.min(type.caretX, type.width)
         y: (parent.height - height) / 2
         width: 2
         height: type.fontPixelSize + 4
